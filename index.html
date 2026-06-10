@@ -578,7 +578,7 @@ async function callGemini(userText = null) {
         ? [{ role: 'user', parts: [{ text: 'Por favor, comienza la entrevista metacognitiva.' }] }]
         : state.history;
 
-    const res = await fetch(GEMINI_URL, {
+    const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -612,7 +612,7 @@ async function callGemini(userText = null) {
 async function callGeminiEval(transcript) {
     const prompt = EVAL_PROMPT.replace('{TRANSCRIPT}', transcript);
 
-    const res = await fetch(GEMINI_URL, {
+    const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
