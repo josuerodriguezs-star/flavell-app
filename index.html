@@ -737,17 +737,21 @@ function setupRecognition() {
         if (!state.isComplete) setAvatar('idle');
     };
 
-    r.onerror = event => {
-        state.isListening = false;
-        document.getElementById('micBtn').classList.remove('listening');
-        document.getElementById('micBtn').textContent = '🎤';
-        if (event.error === 'not-allowed') {
-            updateStatus('Permiso de micrófono denegado. Usa el campo de texto.', 'error');
-        } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-            updateStatus(`Error de micrófono: ${event.error}`, 'error');
-        }
-        if (!state.isComplete) setAvatar('idle');
-    };
+r.onerror = event => {
+    state.isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('micBtn').textContent = '🎤';
+    
+    if (event.error === 'not-allowed') {
+        updateStatus('Permiso de micrófono denegado. Usa el campo de texto.', 'error');
+    } else if (event.error === 'network') {
+        // Ignorar errores de red, son temporales
+        console.warn('Error de conexión - reintentando...');
+    } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
+        updateStatus(`Error de micrófono: ${event.error}`, 'error');
+    }
+    if (!state.isComplete) setAvatar('idle');
+};
 }
 
 function toggleMic() {
