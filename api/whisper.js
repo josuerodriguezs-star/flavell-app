@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // req.body debe contener: { audio: base64String }
         const { audio } = req.body;
 
         if (!audio) {
@@ -19,31 +18,46 @@ export default async function handler(req, res) {
         // Convertir base64 a Buffer
         const audioBuffer = Buffer.from(audio, 'base64');
 
-        // Crear FormData
-        const FormData = (await import('form-data')).default;
-        const form = new FormData();
-        form.append('file', audioBuffer, 'audio.webm');
-        form.append('model', 'whisper-1');
+        // Construir FormData manualmente (compatible con Vercel)
+        const boundary = String(Math.random()).substring(2);
+        let body = '';
 
-        // Llamar a Whisper
+        // Parte del archivo
+        body += `--${boundary}\r\n`;
+        body += `Content-Disposition: form-data; name="file"; filename="audio.webm"\r\n`;
+        body += `Content-Type: audio/webm\r\n\r\n`;
+
+        // Combinar partes de texto con buffer de audio
+        const bodyBuffer = Buffer.concat([
+            Buffer.from(body),
+            audioBuffer,
+            Buffer.from(`\r\n--${boundary}\r\n`),
+            Buffer.from(`Content-Disposition: form-data; name="model"\r\n\r\nwhisper-1\r\n`),
+            Buffer.from(`--${boundary}--\r\n`)
+        ]);
+
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                ...form.getHeaders()
+                'Content-Type': `multipart/form-data; boundary=${boundary}`
             },
-            body: form
+            body: bodyBuffer
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(response.status).json(data);
+            console.error('Whisper API error:', data);
+            return res.status(response.status).json({ 
+                error: data.error?.message || 'Whisper API error' 
+            });
         }
 
-        return res.status(200).json({ text: data.text });
+        return res.status(200).json({ text: data.text || '' });
 
     } catch (error) {
+        console.error('Whisper handler error:', error);
         return res.status(500).json({ error: error.message });
     }
 }
