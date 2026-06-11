@@ -15,14 +15,14 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No audio provided' });
         }
 
-        // Decodificar base64
+        // Decodificar base64 a buffer
         const audioBuffer = Buffer.from(audio, 'base64');
 
         if (audioBuffer.length === 0) {
-            return res.status(400).json({ error: 'Empty audio' });
+            return res.status(400).json({ error: 'Empty audio buffer' });
         }
 
-        // Construir multipart simple
+        // Construir multipart para OpenAI
         const boundary = String(Math.random()).substring(2);
         
         const part1 = Buffer.from(
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
         const body = Buffer.concat([part1, audioBuffer, part2]);
 
-        // Llamar Whisper
+        // Llamar API Whisper
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',
             headers: {
@@ -53,14 +53,16 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Whisper error:', data);
-            return res.status(response.status).json({ error: data.error?.message || 'Error' });
+            console.error('Whisper API error:', data);
+            return res.status(response.status).json({ 
+                error: data.error?.message || 'Whisper API failed' 
+            });
         }
 
         return res.status(200).json({ text: data.text || '' });
 
     } catch (error) {
-        console.error('Error:', error.message);
+        console.error('Whisper handler error:', error);
         return res.status(500).json({ error: error.message });
     }
 }
