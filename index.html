@@ -367,6 +367,10 @@
     </div>
 
     <script>
+        console.log('╔════════════════════════════════════════╗');
+        console.log('║  FLAVELL MIRA v10 - Iniciando...       ║');
+        console.log('╚════════════════════════════════════════╝');
+        
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycby.../exec?token=flavell-mira-token-2024',
@@ -429,17 +433,43 @@
         };
 
         function initGoogleAuth() {
-            google.accounts.id.initialize({
-                client_id: CONFIG.GOOGLE_CLIENT_ID,
-                callback: handleGoogleLogin
-            });
-            google.accounts.id.renderButton(
-                document.getElementById('google-signin-button'),
-                { theme: 'outline', size: 'large', text: 'signin_with' }
-            );
+            console.log('🔐 Inicializando Google Auth...');
+            
+            // Esperar a que Google esté disponible
+            if (typeof google === 'undefined' || !google.accounts) {
+                console.warn('⏳ Google aún no carga, reintentando en 500ms...');
+                setTimeout(initGoogleAuth, 500);
+                return;
+            }
+
+            try {
+                google.accounts.id.initialize({
+                    client_id: CONFIG.GOOGLE_CLIENT_ID,
+                    callback: handleGoogleLogin
+                });
+                
+                console.log('✅ Google inicializado correctamente');
+                
+                const button = document.getElementById('google-signin-button');
+                if (!button) {
+                    console.error('❌ Error: Elemento #google-signin-button no encontrado');
+                    return;
+                }
+                
+                google.accounts.id.renderButton(button, {
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'signin_with'
+                });
+                
+                console.log('✅ Botón de Google renderizado');
+            } catch (error) {
+                console.error('❌ Error en Google Auth:', error);
+            }
         }
 
         function handleGoogleLogin(response) {
+            console.log('🔓 Usuario intentando login...');
             try {
                 const base64Url = response.credential.split('.')[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -454,13 +484,19 @@
                 state.startTime = Date.now();
                 state.lastActivityTime = Date.now();
 
+                console.log('✅ Login exitoso');
+                console.log('   Usuario:', state.userName);
+                console.log('   Email:', state.userEmail);
+                console.log('   ID:', state.userId);
+                console.log('   Sesión:', state.sessionId);
+
                 document.getElementById('loginModal').classList.remove('active');
                 document.getElementById('appContainer').classList.remove('hidden');
                 document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
 
                 startInterview();
             } catch (error) {
-                console.error('Auth error:', error);
+                console.error('❌ Error en login:', error);
             }
         }
 
@@ -1055,7 +1091,17 @@ ${state.fase === 1
             }
         }
 
-        window.addEventListener('DOMContentLoaded', initGoogleAuth);
+        // Esperar a que el DOM esté listo
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 DOM listo, intentando inicializar Google Auth...');
+            initGoogleAuth();
+        });
+
+        // También intentar cuando toda la página cargue
+        window.addEventListener('load', () => {
+            console.log('🚀 Página completamente cargada, verificando Google Auth...');
+            initGoogleAuth();
+        });
     </script>
 
 </body>
