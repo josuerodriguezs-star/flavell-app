@@ -3,1083 +3,944 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLAVELL - Agente de Evaluación Metacognitiva</title>
+    <title>FLAVELL — Evaluación Metacognitiva</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ===== RESET Y VARIABLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #111829;
+            --bg-tertiary: #0f1a33;
+            --bg-hover: #1a2847;
+            --border-color: #1a2847;
+            --text-primary: #e8e8e8;
+            --text-secondary: #888888;
+            --accent-orange: #ff9d4d;
+            --accent-orange-light: rgba(255, 157, 77, 0.15);
+            --accent-orange-border: rgba(255, 157, 77, 0.2);
+        }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            overflow-x: hidden;
         }
 
+        /* ===== CONTENEDOR PRINCIPAL ===== */
         .container {
             width: 100%;
-            max-width: 900px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 720px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
             overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 90vh;
+            border: 1px solid var(--border-color);
         }
 
-        /* ZONA SUPERIOR */
-        .zone-top {
-            background: linear-gradient(135deg, #001a4d 0%, #0066cc 100%);
-            padding: 18px 20px;
-            text-align: center;
+        /* ===== BARRA SUPERIOR ===== */
+        .top-bar {
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-hover) 100%);
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             flex: 0 0 auto;
+        }
+
+        .top-bar-left {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
 
-        .avatar {
-            width: 68px;
-            height: 68px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 34px;
-            animation: pulse 2s infinite;
-            box-shadow: 0 0 20px rgba(255,255,255,0.5);
-            transition: all 0.3s ease;
+        .app-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        .app-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
         }
 
-        .agent-name { color: white; font-size: 22px; font-weight: bold; }
-        .agent-subtitle { color: rgba(255,255,255,0.75); font-size: 11px; }
-
-        .progress-bar {
-            width: 75%;
-            max-width: 380px;
-            height: 5px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 4px;
+        .phase-badge {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-orange);
+            background: var(--accent-orange-light);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-orange-border);
+            white-space: nowrap;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: white;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        /* ZONA CENTRAL */
-        .zone-middle {
+        /* ===== ÁREA DE CONVERSACIÓN ===== */
+        .conversation-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
-        }
-
-        .conversation {
+            padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            min-height: 100%;
-            justify-content: flex-end;
+            gap: 16px;
+            scroll-behavior: smooth;
         }
 
+        .conversation-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .conversation-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .conversation-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 157, 77, 0.3);
+            border-radius: 3px;
+        }
+
+        .conversation-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 157, 77, 0.5);
+        }
+
+        /* ===== MENSAJES ===== */
         .message {
             display: flex;
-            animation: slideIn 0.3s ease;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .message.agent { justify-content: flex-start; }
-        .message.user  { justify-content: flex-end; }
+        .message.mira-msg {
+            justify-content: flex-start;
+        }
+
+        .message.student-msg {
+            justify-content: flex-end;
+        }
 
         .message-bubble {
             max-width: 75%;
-            padding: 11px 16px;
-            border-radius: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
             font-size: 14px;
             line-height: 1.55;
+            word-wrap: break-word;
+            animation: bubbleIn 0.3s ease;
         }
 
-        .message.agent .message-bubble {
-            background: #e3f2fd;
-            color: #001a4d;
-            border-bottom-left-radius: 3px;
+        @keyframes bubbleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
-        .message.user .message-bubble {
-            background: #667eea;
-            color: white;
-            border-bottom-right-radius: 3px;
+        .message.mira-msg .message-bubble {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-left: 3px solid var(--accent-orange);
         }
 
-        /* Typing indicator */
-        .typing { display: flex; align-items: center; gap: 4px; min-height: 28px; }
-        .typing span {
-            width: 8px; height: 8px;
-            background: #667eea;
+        .message.student-msg .message-bubble {
+            background: var(--accent-orange-light);
+            color: var(--text-primary);
+            border-right: 3px solid var(--accent-orange);
+        }
+
+        /* ===== INDICADOR DE ESCRITURA ===== */
+        .typing-container {
+            display: flex;
+            gap: 6px;
+            padding: 12px 16px;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-orange);
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-orange);
             border-radius: 50%;
-            display: inline-block;
-            animation: bounce 1.4s infinite ease-in-out;
-        }
-        .typing span:nth-child(2) { animation-delay: 0.2s; }
-        .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
-            40%           { transform: scale(1.0); opacity: 1; }
+            animation: typingBounce 1.4s infinite ease-in-out;
         }
 
-        /* ZONA INFERIOR */
-        .zone-bottom {
-            background: white;
-            padding: 14px 20px;
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-8px);
+            }
+        }
+
+        /* ===== BARRA DE ESTADO ===== */
+        .status-bar {
+            background: var(--bg-tertiary);
+            padding: 12px 24px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            letter-spacing: 0.4px;
             flex: 0 0 auto;
+            transition: color 0.2s ease;
+        }
+
+        .status-bar.active {
+            color: var(--accent-orange);
+            font-weight: 600;
+        }
+
+        .status-bar.error {
+            color: #ff6b6b;
+        }
+
+        /* ===== ÁREA DE ENTRADA ===== */
+        .input-container {
+            background: var(--bg-tertiary);
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
             display: flex;
-            flex-direction: column;
-            align-items: center;
             gap: 10px;
-            border-top: 1px solid #eee;
+            flex: 0 0 auto;
         }
 
-        .input-row {
-            display: flex;
-            width: 100%;
-            gap: 8px;
-        }
-
-        .text-input {
+        .input-field {
             flex: 1;
-            padding: 10px 16px;
-            border: 2px solid #ddd;
-            border-radius: 25px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 11px 14px;
+            color: var(--text-primary);
             font-size: 14px;
             font-family: inherit;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
-        .text-input:focus   { border-color: #667eea; }
-        .text-input:disabled { background: #f5f5f5; color: #aaa; }
 
-        .send-btn {
-            padding: 10px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 25px;
+        .input-field::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 3px var(--accent-orange-light);
+        }
+
+        .input-field:disabled {
+            background: rgba(26, 40, 71, 0.5);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .send-button {
+            background: rgba(255, 157, 77, 0.15);
+            border: 1.5px solid var(--accent-orange);
+            color: var(--accent-orange);
+            padding: 10px 18px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            font-family: inherit;
-            transition: background 0.2s;
-        }
-        .send-btn:hover:not(:disabled) { background: #764ba2; }
-        .send-btn:disabled { background: #ccc; cursor: not-allowed; }
-
-        .mic-button {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-size: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
-        .mic-button:hover:not(:disabled) {
-            transform: scale(1.1);
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
-        }
-        .mic-button:active:not(:disabled) { transform: scale(0.95); }
-        .mic-button.listening {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
-            animation: pulse-listen 1s infinite;
-        }
-        @keyframes pulse-listen {
-            0%, 100% { box-shadow: 0 8px 25px rgba(255,107,107,0.4); }
-            50%       { box-shadow: 0 8px 50px rgba(255,107,107,0.9); }
-        }
-        .mic-button:disabled { background: #ddd; box-shadow: none; cursor: not-allowed; }
-
-        .status-text {
-            font-size: 13px;
-            color: #888;
-            text-align: center;
-            min-height: 18px;
-            transition: color 0.2s;
-        }
-        .status-text.active  { color: #667eea; font-weight: 600; }
-        .status-text.error   { color: #e53e3e; }
-        .status-text.success { color: #38a169; font-weight: 600; }
-
-        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-
-        .btn-action {
-            padding: 7px 14px;
-            border: 1.5px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 20px;
-            cursor: pointer;
+            font-weight: 600;
             font-size: 12px;
             font-family: inherit;
-            transition: all 0.2s;
+            letter-spacing: 0.4px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex: 0 0 auto;
         }
-        .btn-action:hover:not(:disabled) { background: #667eea; color: white; }
-        .btn-action:disabled { border-color: #ddd; color: #bbb; cursor: not-allowed; }
 
-        /* MODALS */
+        .send-button:hover:not(:disabled) {
+            background: rgba(255, 157, 77, 0.25);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 157, 77, 0.2);
+        }
+
+        .send-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .send-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ===== MODAL DE LOGIN ===== */
         .modal {
             display: none;
             position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            backdrop-filter: blur(2px);
         }
-        .modal.active { display: flex; }
+
+        .modal.active {
+            display: flex;
+        }
 
         .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 100%;
-        }
-        .modal-sm { max-width: 500px; }
-        .modal-lg { max-width: 900px; max-height: 90vh; overflow-y: auto; }
-
-        .modal-header {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 48px 40px;
             text-align: center;
-            margin-bottom: 28px;
-            padding-bottom: 18px;
-            border-bottom: 2px solid #f0f0f0;
+            max-width: 420px;
+            width: 100%;
+            animation: modalSlideIn 0.3s ease;
         }
-        .modal-header h1 { color: #001a4d; font-size: 20px; margin-bottom: 6px; }
-        .modal-header p  { color: #666; font-size: 13px; }
 
-        .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #001a4d;
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 28px;
             font-weight: 700;
-            font-size: 12px;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: monospace;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .form-group input:focus { border-color: #667eea; }
-        .form-group small { color: #888; display: block; margin-top: 8px; font-size: 12px; line-height: 1.6; }
-        .form-group a { color: #667eea; }
-
-        .submit-btn {
-            width: 100%;
-            padding: 13px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: inherit;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102,126,234,0.4);
+            margin-bottom: 8px;
+            color: #fff;
+            letter-spacing: -0.5px;
         }
 
-        .alert { padding: 11px 15px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
-        .alert-error { background: #fff5f5; color: #c53030; border: 1px solid #feb2b2; }
-
-        /* Rubric */
-        .result-card {
-            text-align: center;
-            padding: 28px;
-            border-radius: 16px;
-            margin-bottom: 28px;
-            border: 3px solid;
-        }
-        .result-level    { font-size: 26px; font-weight: bold; margin-bottom: 6px; }
-        .result-score    { font-size: 17px; color: #444; margin-bottom: 14px; }
-        .result-feedback { font-size: 14px; color: #555; line-height: 1.65; max-width: 620px; margin: 0 auto; }
-
-        .dim-section { margin-bottom: 24px; }
-        .dim-section h3 {
-            color: #001a4d; font-size: 15px;
-            margin-bottom: 12px; padding-bottom: 8px;
-            border-bottom: 1px solid #eee;
+        .modal-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+            letter-spacing: 0.3px;
         }
 
-        .rubric-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .rubric-table th {
-            background: #f0f4ff; color: #001a4d;
-            padding: 9px 12px; text-align: left; font-weight: 700;
-        }
-        .rubric-table td {
-            padding: 9px 12px;
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: middle;
-        }
-        .rubric-table tr:last-child td { border-bottom: none; }
-
-        .score-dots { display: flex; gap: 4px; }
-        .dot { width: 11px; height: 11px; border-radius: 50%; background: #e0e0e0; }
-        .dot.filled { background: #667eea; }
-
-        .dim-total { text-align: right; font-weight: bold; color: #667eea; font-size: 13px; margin-top: 6px; }
-
-        .highlight-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 22px;
-        }
-        .highlight-card { background: #f8f9fa; border-radius: 12px; padding: 15px; }
-        .highlight-card h4 { font-size: 13px; color: #001a4d; margin-bottom: 7px; }
-        .highlight-card p  { font-size: 13px; color: #555; line-height: 1.55; }
-
-        .scale-ref { background: #f8f9fa; border-radius: 10px; padding: 14px; margin-bottom: 20px; }
-        .scale-ref h4 { font-size: 12px; color: #666; margin-bottom: 8px; }
-        .scale-badges { display: flex; gap: 6px; flex-wrap: wrap; }
-        .scale-badge {
-            background: white; border: 1px solid #ddd;
-            border-radius: 15px; padding: 3px 10px;
-            font-size: 11px; color: #555;
+        .modal-divider {
+            width: 40px;
+            height: 3px;
+            background: var(--accent-orange);
+            margin: 0 auto 32px;
         }
 
-        .modal-close-btn {
-            display: block; margin: 16px auto 0;
-            padding: 11px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border: none; border-radius: 10px;
-            font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit;
+        #google-signin-button {
+            margin-top: 20px;
         }
 
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
-            .container { height: 100vh; border-radius: 0; }
-            .message-bubble { max-width: 90%; }
-            .mic-button { width: 60px; height: 60px; font-size: 26px; }
-            .highlight-section { grid-template-columns: 1fr; }
-            .modal-content { padding: 24px; }
+            .container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+            }
+
+            .modal-content {
+                padding: 32px 24px;
+                margin: 20px;
+            }
+
+            .modal-title {
+                font-size: 24px;
+            }
+
+            .top-bar {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .phase-badge {
+                order: 3;
+                flex-basis: 100%;
+            }
+        }
+
+        /* ===== UTILIDADES ===== */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- MODAL: RÚBRICA -->
-    <div class="modal" id="rubricModal">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h1>📊 Reporte Metacognitivo — FLAVELL</h1>
-                <p>Basado en Schraw (1998) y Flavell (1979) · Evaluación de Autorregulación del Aprendizaje</p>
+    <!-- ===== MODAL DE AUTENTICACIÓN ===== -->
+    <div class="modal active" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-title">FLAVELL</div>
+            <div class="modal-subtitle">
+                Evaluación Metacognitiva<br>
+                <span style="font-size: 12px;">Powered by Anthropic</span>
             </div>
-            <div id="rubricContent"></div>
-            <button class="modal-close-btn" onclick="closeModal('rubricModal')">Cerrar</button>
+            <div class="modal-divider"></div>
+            <div id="google-signin-button"></div>
         </div>
     </div>
 
-    <!-- APP PRINCIPAL -->
-    <div class="container">
-        <!-- ZONA SUPERIOR: Avatar -->
-        <div class="zone-top">
-            <div class="avatar" id="avatar">🧠</div>
-            <div class="agent-name">FLAVELL</div>
-            <div class="agent-subtitle">Agente de Evaluación Metacognitiva · Powered by Gemini</div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+    <!-- ===== APLICACIÓN PRINCIPAL ===== -->
+    <div class="container hidden" id="appContainer">
+        <!-- Barra superior -->
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <div class="app-title">FLAVELL</div>
+                <div class="app-subtitle" id="userGreeting">Hola</div>
             </div>
+            <div class="phase-badge" id="phaseBadge">Fase 1</div>
         </div>
 
-        <!-- ZONA CENTRAL: Conversación -->
-        <div class="zone-middle" id="zoneMiddle">
-            <div class="conversation" id="conversation"></div>
-        </div>
+        <!-- Área de conversación -->
+        <div class="conversation-container" id="conversationContainer"></div>
 
-        <!-- ZONA INFERIOR: Controles -->
-        <div class="zone-bottom">
-            <div class="input-row">
-                <input
-                    type="text"
-                    class="text-input"
-                    id="textInput"
-                    placeholder="Escribe tu respuesta aquí..."
-                    autocomplete="off"
-                    disabled
-                >
-                <button class="send-btn" id="sendBtn" onclick="sendTextMessage()" disabled>Enviar</button>
-            </div>
+        <!-- Barra de estado -->
+        <div class="status-bar" id="statusBar">Conectando...</div>
 
-            <button class="mic-button" id="micBtn" disabled>🎤</button>
-
-            <div class="status-text" id="statusText">Configurando...</div>
-
-            <div class="action-buttons">
-                <button class="btn-action" id="btnEvaluar" onclick="requestEvaluation()" disabled>📊 Evaluar</button>
-                <button class="btn-action" id="btnDescargar" onclick="downloadTranscript()" disabled>📥 Descargar</button>
-                <button class="btn-action" onclick="resetConversation()">🔄 Reiniciar</button>
-            </div>
+        <!-- Área de entrada -->
+        <div class="input-container">
+            <input
+                type="text"
+                class="input-field"
+                id="messageInput"
+                placeholder="Escribe tu respuesta..."
+                disabled
+            >
+            <button class="send-button" id="sendButton" onclick="sendMessage()" disabled>
+                Enviar
+            </button>
         </div>
     </div>
 
-<script>
-// ===== CONFIGURACIÓN =====
-// Llamadas a /api/chat configuradas en líneas 581 y 615
-const MAX_MESSAGES = 12;
-const END_SIGNAL     = 'ENTREVISTA_COMPLETADA';
+    <script>
+        // ===== CONFIGURACIÓN GLOBAL =====
+        const CONFIG = {
+            GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
+            ANTHROPIC_API: '/api/chat',
+            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbyUJVuKeuKY7OhaJQyKU66E1hawloxg-rZRW58zoSwPhu3fQpncZY5OegjrBYOKp9dW/exec',
+            MAX_TURNS: 12,
+            PHASE_DETECTION_KEYWORDS: {
+                2: ['ya empecé', 'estoy', 'hice', 'leo', 'leyendo', 'haciendo', 'resolviendo'],
+                3: ['ya terminé', 'acabé', 'finalizé', 'aprendí', 'descubrí', 'si lo hiciera']
+            }
+        };
 
-const SYSTEM_PROMPT = `Eres FLAVELL, un agente especializado en evaluación metacognitiva inspirado en la teoría de John H. Flavell (1979) y el marco de Schraw (1998).
+        // ===== ESTADO GLOBAL =====
+        const state = {
+            // Autenticación
+            userId: null,
+            userName: null,
+            userEmail: null,
+            
+            // Sesión
+            sessionId: null,
+            sessionStart: null,
+            
+            // Conversación
+            turno: 0,
+            fase: 1,
+            history: [],
+            transcript: [],
+            isComplete: false,
+            isLoading: false,
+            
+            // Timestamps
+            lastMessageTime: Date.now()
+        };
 
-TU MISIÓN: Conducir una entrevista socrática para evaluar las habilidades metacognitivas de estudiantes universitarios.
+        // ===== INICIALIZACIÓN GOOGLE AUTH =====
+        function initializeGoogleAuth() {
+            google.accounts.id.initialize({
+                client_id: CONFIG.GOOGLE_CLIENT_ID,
+                callback: handleGoogleLogin,
+                auto_select: false
+            });
 
-DIMENSIONES A EXPLORAR:
-1. Conocimiento de la Cognición:
-   - Declarativo: ¿Qué sabe el estudiante sobre su propio proceso de aprendizaje?
-   - Procedimental: ¿Qué estrategias específicas conoce y usa?
-   - Condicional: ¿Sabe cuándo y por qué usar cada estrategia?
-2. Regulación de la Cognición:
-   - Planificación: ¿Cómo organiza su proceso de aprendizaje antes de comenzar?
-   - Monitoreo: ¿Cómo verifica su comprensión mientras estudia?
-   - Ajuste: ¿Cómo adapta sus estrategias cuando algo no funciona?
-   - Evaluación: ¿Cómo reflexiona sobre su desempeño al terminar?
-3. Motivación y Transferencia:
-   - Motivación: ¿Qué lo mantiene comprometido con el aprendizaje difícil?
-   - Transferencia: ¿Puede aplicar lo aprendido en nuevos contextos?
-   - Agencia: ¿Siente que tiene control sobre su propio aprendizaje?
-
-ESTRUCTURA (10-12 intercambios):
-- Comienza con una bienvenida cálida y breve
-- Explora las 3 dimensiones con preguntas abiertas, UNA a la vez
-- Profundiza con seguimiento si la respuesta es superficial
-- Al cubrir las 3 dimensiones, despídete con un mensaje motivador
-- Termina tu ÚLTIMO mensaje con la señal exacta: ${END_SIGNAL}
-
-PRINCIPIOS:
-- Habla SIEMPRE en español con tono empático, socrático y profesional
-- Haz una sola pregunta por turno
-- No evalúes explícitamente durante la conversación
-- Sé conciso: máximo 3-4 oraciones por respuesta`;
-
-const EVAL_PROMPT = `Eres un evaluador experto en metacognición educativa. Analiza la siguiente transcripción de entrevista y evalúa al estudiante con la Rúbrica FLAVELL (Schraw, 1998).
-
-ESCALA (0-4 por indicador):
-0 = Ausente: Sin evidencia de metacognición
-1 = Dependiente: Muy superficial, no reflexiona
-2 = Emergente: Reflexión básica pero parcial
-3 = En desarrollo: Reflexión clara aunque no siempre profunda
-4 = Autónomo: Reflexión profunda, estratégica y sistemática
-
-INDICADORES:
-Dimensión 1 - Conocimiento de la Cognición (max 12 pts):
-- declarativo: Conciencia sobre su proceso cognitivo y formas de aprender
-- procedimental: Conocimiento de estrategias específicas de estudio
-- condicional: Sabe cuándo y por qué usar cada estrategia
-
-Dimensión 2 - Regulación de la Cognición (max 16 pts):
-- planificacion: Organización antes de estudiar
-- monitoreo: Verificación de comprensión durante el estudio
-- ajuste: Cambiar estrategias cuando no funcionan
-- evaluacion: Reflexión crítica sobre desempeño al terminar
-
-Dimensión 3 - Motivación y Transferencia (max 12 pts):
-- motivacion: Lo que mantiene el compromiso con el aprendizaje
-- transferencia: Aplicación en nuevos contextos
-- agencia: Sentido de control sobre su propio aprendizaje
-
-TRANSCRIPCIÓN:
-{TRANSCRIPT}
-
-Responde ÚNICAMENTE con JSON válido, sin texto ni markdown adicional:
-{
-  "indicadores": {
-    "declarativo":   {"puntuacion": 0, "evidencia": "cita o descripción"},
-    "procedimental": {"puntuacion": 0, "evidencia": "..."},
-    "condicional":   {"puntuacion": 0, "evidencia": "..."},
-    "planificacion": {"puntuacion": 0, "evidencia": "..."},
-    "monitoreo":     {"puntuacion": 0, "evidencia": "..."},
-    "ajuste":        {"puntuacion": 0, "evidencia": "..."},
-    "evaluacion":    {"puntuacion": 0, "evidencia": "..."},
-    "motivacion":    {"puntuacion": 0, "evidencia": "..."},
-    "transferencia": {"puntuacion": 0, "evidencia": "..."},
-    "agencia":       {"puntuacion": 0, "evidencia": "..."}
-  },
-  "dim1_total": 0,
-  "dim2_total": 0,
-  "dim3_total": 0,
-  "total_global": 0,
-  "perfil": "Dependiente",
-  "fortalezas": "2-3 fortalezas identificadas",
-  "oportunidades": "2-3 áreas de mejora",
-  "retroalimentacion": "párrafo motivador de retroalimentación general"
-}`;
-
-// ===== ESTADO =====
-const state = {
-    history:     [],
-    transcript:  [],
-    msgCount:    0,
-    isComplete:  false,
-    isListening: false,
-    isSpeaking:  false,
-    rubricData:  null,
-    recognition: null,
-};
-
-// ===== INIT =====
-window.addEventListener('DOMContentLoaded', () => {
-    setupRecognition();
-    document.getElementById('textInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendTextMessage();
-    });
-    document.getElementById('micBtn').addEventListener('click', toggleMic);
-    startInterview();
-});
-
-// ===== GEMINI CONVERSATION =====
-async function callGemini(userText = null) {
-    const isFirst = state.history.length === 0;
-
-    if (!isFirst && userText) {
-        state.history.push({ role: 'user', parts: [{ text: userText }] });
-    }
-
-    const contents = isFirst
-        ? [{ role: 'user', parts: [{ text: 'Por favor, comienza la entrevista metacognitiva.' }] }]
-        : state.history;
-
-    const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents,
-            generationConfig: { temperature: 0.8, maxOutputTokens: 400 }
-        })
-    });
-
-    if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    const text = data.candidates[0].content.parts[0].text;
-
-    if (isFirst) {
-        state.history = [
-            { role: 'user',  parts: [{ text: 'Por favor, comienza la entrevista metacognitiva.' }] },
-            { role: 'model', parts: [{ text }] }
-        ];
-    } else {
-        state.history.push({ role: 'model', parts: [{ text }] });
-    }
-
-    return text;
-}
-
-// ===== GEMINI EVALUATION =====
-async function callGeminiEval(transcript) {
-    const prompt = EVAL_PROMPT.replace('{TRANSCRIPT}', transcript);
-
-    const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 1500 }
-        })
-    });
-
-    if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    return data.candidates[0].content.parts[0].text;
-}
-
-// ===== INTERVIEW FLOW =====
-async function startInterview() {
-    enableInput(false);
-    setAvatar('thinking');
-    updateStatus('Conectando con FLAVELL...', 'active');
-
-    try {
-        const raw = await callGemini();
-        const clean = sanitize(raw);
-        addMessage('agent', clean);
-        speak(clean);
-        enableInput(true);
-        updateStatus('Toca el micrófono o escribe para responder');
-        document.getElementById('btnDescargar').disabled = false;
-    } catch (err) {
-        handleError(err);
-    }
-}
-
-async function sendMessage(userText) {
-    if (!userText.trim() || state.isComplete) return;
-
-    enableInput(false);
-    addMessage('user', userText);
-    state.msgCount++;
-    updateProgress();
-
-    showTyping();
-    setAvatar('thinking');
-    updateStatus('FLAVELL está pensando...', 'active');
-
-    try {
-        const raw = await callGemini(userText);
-        hideTyping();
-
-        const done  = raw.includes(END_SIGNAL);
-        const clean = sanitize(raw);
-
-        addMessage('agent', clean);
-        speak(clean);
-
-        if (done) {
-            state.isComplete = true;
-            document.getElementById('btnEvaluar').disabled  = false;
-            document.getElementById('micBtn').disabled      = true;
-            document.getElementById('textInput').disabled   = true;
-            document.getElementById('sendBtn').disabled     = true;
-            updateProgress(100);
-            updateStatus('Entrevista completada. Presiona "Evaluar" para tu reporte.', 'success');
-        } else {
-            enableInput(true);
-            updateStatus('Tu turno...');
+            google.accounts.id.renderButton(
+                document.getElementById('google-signin-button'),
+                {
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'signin_with',
+                    logo_alignment: 'center'
+                }
+            );
         }
-    } catch (err) {
-        hideTyping();
-        handleError(err);
-        enableInput(true);
-    }
-}
 
-function sendTextMessage() {
-    const input = document.getElementById('textInput');
-    const text  = input.value.trim();
-    if (!text) return;
-    input.value = '';
-    sendMessage(text);
-}
+        function handleGoogleLogin(response) {
+            try {
+                // Decodificar JWT
+                const base64Url = response.credential.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                    atob(base64)
+                        .split('')
+                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                        .join('')
+                );
 
-// ===== SPEECH RECOGNITION =====
-function setupRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-        document.getElementById('micBtn').style.display = 'none';
-        return;
-    }
+                const userData = JSON.parse(jsonPayload);
 
-    const r = new SR();
-    r.lang = 'es-MX';
-    r.continuous = false;
-    r.interimResults = true;
-    state.recognition = r;
+                // Guardar datos en estado
+                state.userId = userData.sub;
+                state.userName = userData.name;
+                state.userEmail = userData.email;
+                state.sessionId = `${state.userId}-${Date.now()}`;
+                state.sessionStart = new Date().toISOString();
 
-    r.onstart = () => {
-        state.isListening = true;
-        document.getElementById('micBtn').classList.add('listening');
-        document.getElementById('micBtn').textContent = '🛑';
-        setAvatar('listening');
-        updateStatus('Escuchando... toca de nuevo para detener', 'active');
-    };
+                // Actualizar UI
+                document.getElementById('loginModal').classList.remove('active');
+                document.getElementById('appContainer').classList.remove('hidden');
+                document.getElementById('userGreeting').textContent = `Hola, ${state.userName.split(' ')[0]}`;
 
-    r.onresult = event => {
-        const partial = Array.from(event.results).map(x => x[0].transcript).join('');
-        document.getElementById('textInput').value = partial;
+                // Iniciar entrevista
+                startInterview();
 
-        if (event.results[event.results.length - 1].isFinal) {
-            document.getElementById('textInput').value = '';
-            sendMessage(partial);
+            } catch (error) {
+                logError('Error en autenticación Google', error);
+                updateStatus('Error en autenticación. Intenta de nuevo.', 'error');
+            }
         }
-    };
 
-    r.onend = () => {
-        state.isListening = false;
-        document.getElementById('micBtn').classList.remove('listening');
-        document.getElementById('micBtn').textContent = '🎤';
-        if (!state.isComplete) setAvatar('idle');
-    };
+        // ===== FLUJO DE ENTREVISTA =====
+        async function startInterview() {
+            state.turno = 1;
+            state.fase = 1;
+            
+            updateStatus('Conectando con Mira...', 'active');
+            updatePhaseBadge(1);
 
-r.onerror = event => {
-    state.isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micBtn').textContent = '🎤';
-    
-    if (event.error === 'not-allowed') {
-        updateStatus('Permiso de micrófono denegado. Usa el campo de texto.', 'error');
-    } else if (event.error === 'network') {
-        // Ignorar errores de red, son temporales
-        console.warn('Error de conexión - reintentando...');
-    } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-        updateStatus(`Error de micrófono: ${event.error}`, 'error');
-    }
-    if (!state.isComplete) setAvatar('idle');
-};
-}
+            try {
+                const apertura = await generateMiraResponse('apertura', null);
+                addMessage('mira', apertura);
+                
+                logToSheet({
+                    turno: state.turno,
+                    fase: 1,
+                    speaker: 'mira',
+                    tipo: 'apertura',
+                    actividad: '',
+                    texto: apertura,
+                    latencia: 0,
+                    indicadores: ''
+                });
 
-function toggleMic() {
-    if (!state.recognition || state.isComplete) return;
+                enableInput(true);
+                updateStatus('Tu turno');
 
-    if (state.isListening) {
-        state.recognition.stop();
-    } else {
-        if (state.isSpeaking) { window.speechSynthesis?.cancel(); state.isSpeaking = false; }
-        try { state.recognition.start(); } catch (_) {}
-    }
-}
+            } catch (error) {
+                logError('Error iniciando entrevista', error);
+                updateStatus('Error al conectar. Recarga la página.', 'error');
+            }
+        }
 
-// ===== SPEECH SYNTHESIS =====
-function speak(text) {
-    if (!window.speechSynthesis) return;
+        async function sendMessage() {
+            const text = document.getElementById('messageInput').value.trim();
+            
+            if (!text || state.isLoading || state.isComplete) {
+                return;
+            }
 
-    const clean = text.replace(/[*_#`~]/g, '').replace(/\n+/g, ' ').trim();
-    window.speechSynthesis.cancel();
+            // Limpiar input
+            document.getElementById('messageInput').value = '';
+            enableInput(false);
 
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang  = 'es-MX';
-    u.rate  = 0.92;
-    u.pitch = 1.0;
+            state.turno++;
+            const responseTime = Date.now();
 
-    const go = () => {
-        const voices = window.speechSynthesis.getVoices();
-        const v = voices.find(v => v.lang.startsWith('es-MX'))
-               || voices.find(v => v.lang.startsWith('es'))
-               || null;
-        if (v) u.voice = v;
+            // Agregar mensaje del estudiante
+            addMessage('student', text);
 
-        u.onstart = () => { state.isSpeaking = true;  setAvatar('speaking'); };
-        u.onend   = () => { state.isSpeaking = false; setAvatar('idle'); };
-        u.onerror = () => { state.isSpeaking = false; setAvatar('idle'); };
+            // Detectar nueva fase
+            const newPhase = detectPhase(text);
+            if (newPhase !== state.fase) {
+                state.fase = newPhase;
+                updatePhaseBadge(newPhase);
+            }
 
-        window.speechSynthesis.speak(u);
-    };
+            // Registrar respuesta estudiante
+            logToSheet({
+                turno: state.turno - 0.5,
+                fase: state.fase,
+                speaker: 'student',
+                tipo: 'respuesta',
+                actividad: '',
+                texto: text,
+                latencia: (Date.now() - state.lastMessageTime) / 1000,
+                indicadores: ''
+            });
 
-    if (window.speechSynthesis.getVoices().length > 0) {
-        go();
-    } else {
-        window.speechSynthesis.onvoiceschanged = go;
-    }
-}
+            // Generar respuesta de Mira
+            showTyping();
+            updateStatus('Mira está pensando...', 'active');
 
-// ===== UI HELPERS =====
-function addMessage(role, text) {
-    const conv = document.getElementById('conversation');
-    const div  = document.createElement('div');
-    div.className = `message ${role}`;
-    div.innerHTML = `<div class="message-bubble">${text}</div>`;
-    conv.appendChild(div);
+            try {
+                const response = await generateMiraResponse(state.fase, text);
+                hideTyping();
+                
+                addMessage('mira', response);
 
-    state.transcript.push({
-        speaker:   role === 'agent' ? 'FLAVELL' : 'Estudiante',
-        text:      text.replace(/<[^>]+>/g, ''),
-        timestamp: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-    });
+                const latency = (Date.now() - responseTime) / 1000;
 
-    document.getElementById('zoneMiddle').scrollTop = 9999;
-}
+                // Registrar respuesta Mira
+                logToSheet({
+                    turno: state.turno,
+                    fase: state.fase,
+                    speaker: 'mira',
+                    tipo: 'respuesta',
+                    actividad: '',
+                    texto: response,
+                    latencia: latency,
+                    indicadores: ''
+                });
 
-function showTyping() {
-    const conv = document.getElementById('conversation');
-    const div  = document.createElement('div');
-    div.className = 'message agent';
-    div.id = 'typing-ind';
-    div.innerHTML = '<div class="message-bubble typing"><span></span><span></span><span></span></div>';
-    conv.appendChild(div);
-    document.getElementById('zoneMiddle').scrollTop = 9999;
-}
+                // Verificar condiciones de cierre
+                if (shouldClose(response, state.turno)) {
+                    state.isComplete = true;
+                    enableInput(false);
+                    updateStatus('Sesión completada. ¡Muchas gracias!', 'active');
+                    
+                    // Log final de sesión
+                    logToSheet({
+                        turno: state.turno + 1,
+                        fase: state.fase,
+                        speaker: 'system',
+                        tipo: 'session-end',
+                        actividad: '',
+                        texto: `Sesión completada. Turnos totales: ${state.turno}`,
+                        latencia: 0,
+                        indicadores: 'sesión_completada'
+                    });
+                } else {
+                    enableInput(true);
+                    updateStatus('Tu turno');
+                    state.lastMessageTime = Date.now();
+                }
 
-function hideTyping() { document.getElementById('typing-ind')?.remove(); }
+            } catch (error) {
+                hideTyping();
+                logError('Error generando respuesta', error);
+                updateStatus('Error. Intenta de nuevo.', 'error');
+                enableInput(true);
+            }
+        }
 
-function updateStatus(text, cls = '') {
-    const el = document.getElementById('statusText');
-    el.textContent = text;
-    el.className   = `status-text ${cls}`;
-}
+        // ===== GENERACIÓN DE RESPUESTAS CON CLAUDE =====
+        async function generateMiraResponse(phase, studentText) {
+            state.isLoading = true;
 
-function updateProgress(override = null) {
-    const pct = override ?? Math.min((state.msgCount / MAX_MESSAGES) * 100, 95);
-    document.getElementById('progressFill').style.width = pct + '%';
-}
+            try {
+                const systemPrompt = buildSystemPrompt(phase);
+                const userPrompt = buildUserPrompt(phase, studentText);
 
-function setAvatar(s) {
-    const map = { idle: '🧠', thinking: '🤔', speaking: '🗣️', listening: '👂' };
-    document.getElementById('avatar').textContent = map[s] || '🧠';
-}
+                const response = await fetch(CONFIG.ANTHROPIC_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: { parts: [{ text: systemPrompt }] },
+                        contents: state.history.length > 0 
+                            ? state.history
+                            : [{ role: 'user', parts: [{ text: userPrompt }] }],
+                        generationConfig: {
+                            temperature: 0.85,
+                            maxOutputTokens: 250
+                        }
+                    })
+                });
 
-function enableInput(on) {
-    document.getElementById('textInput').disabled = !on;
-    document.getElementById('sendBtn').disabled   = !on;
-    if (state.recognition) document.getElementById('micBtn').disabled = !on;
-}
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
 
-function sanitize(raw) {
-    return raw
-        .replace(END_SIGNAL, '')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .trim();
-}
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Error al generar respuesta';
 
-function handleError(err) {
-    console.error(err);
-    updateStatus(`⚠️ ${err.message || 'Error desconocido'}`, 'error');
-}
+                // Actualizar historial
+                if (state.history.length === 0) {
+                    state.history.push(
+                        { role: 'user', parts: [{ text: userPrompt }] },
+                        { role: 'model', parts: [{ text }] }
+                    );
+                } else {
+                    state.history.push(
+                        { role: 'user', parts: [{ text: userPrompt }] },
+                        { role: 'model', parts: [{ text }] }
+                    );
+                }
 
-function openModal(id)  { document.getElementById(id).classList.add('active');    }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+                // Limpiar respuesta
+                const clean = text.replace(/\*/g, '').trim();
+                return clean;
 
-// ===== EVALUACIÓN =====
-async function requestEvaluation() {
-    document.getElementById('btnEvaluar').disabled = true;
-    updateStatus('Generando reporte metacognitivo con Gemini...', 'active');
+            } catch (error) {
+                throw error;
+            } finally {
+                state.isLoading = false;
+            }
+        }
 
-    const txText = state.transcript
-        .map(e => `${e.speaker} [${e.timestamp}]: ${e.text}`)
-        .join('\n\n');
+        // ===== PROMPTS PARA CLAUDE =====
+        function buildSystemPrompt(phase) {
+            const basePrompt = `Eres Mira, un evaluador metacognitivo experto. Tu rol es conducir una entrevista socrática para evaluar habilidades metacognitivas.
 
-    try {
-        const raw   = await callGeminiEval(txText);
-        const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        state.rubricData = JSON.parse(clean);
-        renderRubric(state.rubricData);
-        document.getElementById('btnDescargar').disabled = false;
-        updateStatus('Reporte generado. Descárgalo con el botón "Descargar".', 'success');
-    } catch (err) {
-        document.getElementById('btnEvaluar').disabled = false;
-        handleError(new Error('No se pudo generar el reporte: ' + err.message));
-    }
-}
+REGLAS CRÍTICAS:
+- Responde SIEMPRE en español
+- Una sola pregunta o actividad por turno
+- Máximo 2-3 oraciones, sé conciso
+- NO uses asteriscos, markdown ni formatos especiales
+- Sé conversacional, empático, no académico
+- Adapta según la fase del estudiante`;
 
-// ===== RUBRIC RENDER =====
-const PROFILE_COLORS = {
-    'Dependiente':    '#e53e3e',
-    'Emergente':      '#dd6b20',
-    'En desarrollo':  '#d69e2e',
-    'Autónomo':       '#38a169'
-};
+            const phaseGuides = {
+                1: `FASE 1 — PLANIFICACIÓN
+El estudiante está en la etapa inicial. Su respuesta sugiere que no ha empezado o está planificando.
+- Pregunta sobre su comprensión de la tarea
+- Indaga qué estrategias planea usar
+- Averigua qué conoce ya del tema`,
+                
+                2: `FASE 2 — EJECUCIÓN
+El estudiante está en medio del proceso. Ha mencionado acciones concretas.
+- Pregunta qué le cuesta trabajo
+- Indaga si está chequeando su progreso
+- Detecta bloqueos o dificultades`,
+                
+                3: `FASE 3 — AUTORREFLEXIÓN
+El estudiante ha terminado o puede evaluar su proceso completo.
+- Pregunta qué aprendió
+- Indaga qué haría diferente
+- Busca síntesis y transferencia`
+            };
 
-const DIMS = [
-    {
-        key: 'dim1', total: 'dim1_total', max: 12,
-        title: '🧠 Dimensión 1: Conocimiento de la Cognición',
-        rows: [
-            ['declarativo',   'Conocimiento Declarativo'],
-            ['procedimental', 'Conocimiento Procedimental'],
-            ['condicional',   'Conocimiento Condicional'],
-        ]
-    },
-    {
-        key: 'dim2', total: 'dim2_total', max: 16,
-        title: '⚙️ Dimensión 2: Regulación de la Cognición',
-        rows: [
-            ['planificacion', 'Planificación'],
-            ['monitoreo',     'Monitoreo'],
-            ['ajuste',        'Ajuste de Estrategias'],
-            ['evaluacion',    'Autoevaluación'],
-        ]
-    },
-    {
-        key: 'dim3', total: 'dim3_total', max: 12,
-        title: '💡 Dimensión 3: Motivación y Transferencia',
-        rows: [
-            ['motivacion',    'Motivación'],
-            ['transferencia', 'Transferencia'],
-            ['agencia',       'Sentido de Agencia'],
-        ]
-    }
-];
+            return basePrompt + '\n\n' + phaseGuides[phase];
+        }
 
-function dots(score) {
-    return Array.from({ length: 4 }, (_, i) =>
-        `<div class="dot ${i < score ? 'filled' : ''}"></div>`
-    ).join('');
-}
+        function buildUserPrompt(phase, studentText) {
+            if (!studentText) {
+                return 'Por favor, comienza la entrevista metacognitiva. Presenta la apertura: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita?"';
+            }
 
-function renderRubric(d) {
-    const color = PROFILE_COLORS[d.perfil] || '#667eea';
-    const pct   = Math.round((d.total_global / 40) * 100);
+            return `Última respuesta del estudiante: "${studentText}"
 
-    let html = `
-    <div class="result-card" style="border-color:${color}; background:${color}15;">
-        <div class="result-level" style="color:${color}">${d.perfil}</div>
-        <div class="result-score">${d.total_global} / 40 puntos (${pct}%)</div>
-        <p class="result-feedback">${d.retroalimentacion}</p>
-    </div>`;
+Basándote en su respuesta, formula una sola pregunta o actividad que:
+1. Sea apropiada para la FASE ${phase}
+2. Profundice en su proceso de aprendizaje
+3. Sea natural y conversacional`;
+        }
 
-    DIMS.forEach(dim => {
-        let rows = '';
-        dim.rows.forEach(([key, label]) => {
-            const ind = d.indicadores[key];
-            rows += `
-            <tr>
-                <td><strong>${label}</strong></td>
-                <td><div class="score-dots">${dots(ind.puntuacion)}</div></td>
-                <td style="text-align:center;font-weight:bold;color:#667eea">${ind.puntuacion}/4</td>
-                <td style="color:#555;font-size:12px">${ind.evidencia}</td>
-            </tr>`;
+        // ===== DETECCIÓN DE FASES =====
+        function detectPhase(text) {
+            const lower = text.toLowerCase();
+
+            // Detectar FASE 3 (Reflexión)
+            if (CONFIG.PHASE_DETECTION_KEYWORDS[3].some(kw => lower.includes(kw))) {
+                return 3;
+            }
+
+            // Detectar FASE 2 (Ejecución)
+            if (CONFIG.PHASE_DETECTION_KEYWORDS[2].some(kw => lower.includes(kw))) {
+                return 2;
+            }
+
+            // Default: FASE 1
+            return 1;
+        }
+
+        // ===== LÓGICA DE CIERRE =====
+        function shouldClose(response, turnoActual) {
+            // Criterios de cierre
+            const hasCompletion = response.toLowerCase().includes('muchas gracias') || 
+                                  response.toLowerCase().includes('hasta la próxima');
+            const maxTurnsReached = turnoActual >= CONFIG.MAX_TURNS;
+
+            return hasCompletion || maxTurnsReached;
+        }
+
+        // ===== LOGGING A GOOGLE SHEETS =====
+        async function logToSheet(logData) {
+            try {
+                const payload = {
+                    sessionId: state.sessionId,
+                    userId: state.userId,
+                    userEmail: state.userEmail,
+                    userName: state.userName,
+                    turno: logData.turno,
+                    fase: logData.fase,
+                    speaker: logData.speaker,
+                    tipo: logData.tipo,
+                    actividad: logData.actividad,
+                    texto: (logData.texto || '').substring(0, 500),
+                    latencia: logData.latencia,
+                    indicadores: logData.indicadores
+                };
+
+                const response = await fetch(CONFIG.SHEETS_WEBHOOK, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    console.log('[FLAVELL] Log registrado correctamente');
+                } else {
+                    console.warn('[FLAVELL] Error en logging:', response.status);
+                }
+
+            } catch (error) {
+                console.error('[FLAVELL] Error logging a Sheets:', error);
+            }
+        }
+
+        // ===== UTILIDADES UI =====
+        function addMessage(role, text) {
+            const container = document.getElementById('conversationContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role === 'mira' ? 'mira-msg' : 'student-msg'}`;
+            messageDiv.innerHTML = `<div class="message-bubble">${escapeHtml(text)}</div>`;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+
+            // Guardar en transcript
+            state.transcript.push({
+                role,
+                text,
+                timestamp: new Date().toISOString(),
+                fase: state.fase
+            });
+        }
+
+        function showTyping() {
+            const container = document.getElementById('conversationContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'message mira-msg';
+            typingDiv.innerHTML = `
+                <div class="typing-container">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator')?.remove();
+        }
+
+        function updatePhaseBadge(phase) {
+            const labels = {
+                1: 'Planificación',
+                2: 'Ejecución',
+                3: 'Reflexión'
+            };
+            document.getElementById('phaseBadge').textContent = labels[phase];
+        }
+
+        function updateStatus(text, type = '') {
+            const statusBar = document.getElementById('statusBar');
+            statusBar.textContent = text;
+            statusBar.classList.remove('active', 'error');
+            if (type) statusBar.classList.add(type);
+        }
+
+        function enableInput(enabled) {
+            document.getElementById('messageInput').disabled = !enabled;
+            document.getElementById('sendButton').disabled = !enabled;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function logError(context, error) {
+            console.error(`[FLAVELL] ${context}:`, error);
+        }
+
+        // ===== EVENT LISTENERS =====
+        document.getElementById('messageInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
         });
 
-        html += `
-        <div class="dim-section">
-            <h3>${dim.title}</h3>
-            <table class="rubric-table">
-                <thead>
-                    <tr>
-                        <th style="width:24%">Indicador</th>
-                        <th style="width:14%">Nivel</th>
-                        <th style="width:9%">Pts.</th>
-                        <th>Evidencia de la Entrevista</th>
-                    </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>
-            <div class="dim-total">Subtotal: ${d[dim.total]} / ${dim.max}</div>
-        </div>`;
-    });
-
-    html += `
-    <div class="highlight-section">
-        <div class="highlight-card">
-            <h4>⭐ Fortalezas Identificadas</h4>
-            <p>${d.fortalezas}</p>
-        </div>
-        <div class="highlight-card">
-            <h4>🎯 Áreas de Oportunidad</h4>
-            <p>${d.oportunidades}</p>
-        </div>
-    </div>
-    <div class="scale-ref">
-        <h4>Escala de puntuación por indicador</h4>
-        <div class="scale-badges">
-            <span class="scale-badge">0 – Ausente</span>
-            <span class="scale-badge">1 – Dependiente</span>
-            <span class="scale-badge">2 – Emergente</span>
-            <span class="scale-badge">3 – En Desarrollo</span>
-            <span class="scale-badge">4 – Autónomo</span>
-        </div>
-    </div>`;
-
-    document.getElementById('rubricContent').innerHTML = html;
-    openModal('rubricModal');
-}
-
-// ===== DESCARGA MARKDOWN =====
-function downloadTranscript() {
-    const now = new Date();
-    let md = `# 📊 Transcripción — FLAVELL Evaluación Metacognitiva\n\n`;
-    md += `**Fecha:** ${now.toLocaleString('es-MX')}  \n`;
-    md += `**Agente:** FLAVELL v2.0 — Powered by Google Gemini  \n`;
-    md += `**Referencia:** Flavell (1979) · Schraw (1998)\n\n---\n\n`;
-    md += `## 💬 TRANSCRIPCIÓN\n\n`;
-
-    state.transcript.forEach(({ speaker, text, timestamp }) => {
-        const emoji = speaker === 'FLAVELL' ? '🤖' : '👤';
-        md += `### ${emoji} **${speaker}** _[${timestamp}]_\n\n${text}\n\n---\n\n`;
-    });
-
-    if (state.rubricData) {
-        const d = state.rubricData;
-        md += `## 📊 REPORTE DE EVALUACIÓN\n\n`;
-        md += `**Perfil:** ${d.perfil}  \n`;
-        md += `**Puntaje Total:** ${d.total_global}/40 (${Math.round(d.total_global / 40 * 100)}%)  \n\n`;
-        md += `**Retroalimentación:** ${d.retroalimentacion}\n\n`;
-        md += `### Puntuaciones por Indicador\n\n`;
-        md += `| Dimensión | Indicador | Pts. | Evidencia |\n|---|---|---|---|\n`;
-
-        const rows = [
-            ['Conocimiento Cognición', 'declarativo',   'Declarativo'],
-            ['',                       'procedimental', 'Procedimental'],
-            ['',                       'condicional',   'Condicional'],
-            ['Regulación Cognición',   'planificacion', 'Planificación'],
-            ['',                       'monitoreo',     'Monitoreo'],
-            ['',                       'ajuste',        'Ajuste'],
-            ['',                       'evaluacion',    'Autoevaluación'],
-            ['Motivación y Transfer.', 'motivacion',    'Motivación'],
-            ['',                       'transferencia', 'Transferencia'],
-            ['',                       'agencia',       'Agencia'],
-        ];
-
-        rows.forEach(([dim, key, label]) => {
-            const ind = d.indicadores[key];
-            md += `| ${dim} | ${label} | ${ind.puntuacion}/4 | ${ind.evidencia} |\n`;
+        // ===== INICIALIZACIÓN =====
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeGoogleAuth();
+            console.log('[FLAVELL] Aplicación inicializada');
         });
+    </script>
 
-        md += `\n**Fortalezas:** ${d.fortalezas}\n\n`;
-        md += `**Áreas de Oportunidad:** ${d.oportunidades}\n\n`;
-    }
-
-    md += `---\n\n## 📚 REFERENCIAS\n\n`;
-    md += `- Flavell, J. H. (1979). Metacognition and cognitive monitoring. *American Psychologist, 34*(10), 906–911.\n`;
-    md += `- Schraw, G. (1998). Promoting general metacognitive awareness. *Instructional Science, 26*, 113–125.\n\n`;
-    md += `*Generado por FLAVELL — Agente de Evaluación Metacognitiva*`;
-
-    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `FLAVELL-${now.toISOString().slice(0, 10)}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-// ===== REINICIAR =====
-function resetConversation() {
-    if (!confirm('¿Deseas reiniciar? Se perderá el progreso actual.')) return;
-
-    window.speechSynthesis?.cancel();
-    if (state.recognition && state.isListening) state.recognition.stop();
-
-    Object.assign(state, {
-        history: [], transcript: [], msgCount: 0,
-        isComplete: false, rubricData: null,
-        isSpeaking: false, isListening: false
-    });
-
-    document.getElementById('conversation').innerHTML = '';
-    document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('btnEvaluar').disabled   = true;
-    document.getElementById('btnDescargar').disabled = true;
-    document.getElementById('textInput').value       = '';
-
-    setAvatar('idle');
-    startInterview();
-}
-</script>
 </body>
 </html>
