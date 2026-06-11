@@ -685,91 +685,239 @@
             updateStatus('Sesión completada ✓', 'success');
             await speakText(closeMessage);
 
-            logToSheet({
-                turno: state.turno,
-                fase: state.fase,
-                speaker: 'mira',
-                tipo: 'cierre',
-                texto: closeMessage,
-                indicadores: state.indicators.join('|'),
-                respuestasCount: state.respuestas.length
-            });
+            // LOGGING CRÍTICO: Registrar cierre ANTES de descargar
+            try {
+                await logToSheet({
+                    turno: state.turno,
+                    fase: state.fase,
+                    speaker: 'mira',
+                    tipo: 'cierre',
+                    texto: closeMessage,
+                    indicadores: state.indicators.join('|'),
+                    respuestasCount: state.respuestas.length
+                });
+                console.log('✅ Cierre registrado en sheet');
+            } catch (error) {
+                console.error('❌ Error registrando cierre:', error);
+            }
 
-            // Generar y descargar reporte
+            // Esperar un poco para asegurar que el log se envíe, LUEGO descargar
             setTimeout(() => {
+                console.log('📥 Descargando reporte...');
                 downloadSessionReport();
-            }, 2000);
+            }, 1000);
         }
 
         function generateSessionReport() {
             const faseLabels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
             const timestamp = new Date().toLocaleString('es-MX');
             const duration = Math.round((Date.now() - state.startTime) / 1000);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
             
-            const report = `═══════════════════════════════════════════════════════
-EVALUACIÓN METACOGNITIVA - FLAVELL
-SESIÓN DE REFLEXIÓN GUIADA
-═══════════════════════════════════════════════════════
+            // Detectar tarea inferida
+            let tareaInferida = 'No especificada';
+            if (state.respuestas.length > 0) {
+                const firstResponse = state.respuestas[0].toLowerCase();
+                if (/tarea|deber|taller/.test(firstResponse)) tareaInferida = 'Tarea / Deber';
+                else if (/leer|lectura|artículo|texto/.test(firstResponse)) tareaInferida = 'Lectura / Investigación';
+                else if (/problema|resolver|calcular|matemáticas/.test(firstResponse)) tareaInferida = 'Problema / Ejercicio';
+                else if (/proyecto|hacer|construir|crear/.test(firstResponse)) tareaInferida = 'Proyecto / Actividad';
+                else if (/examen|prueba|evaluación|quiz/.test(firstResponse)) tareaInferida = 'Evaluación / Examen';
+            }
 
-INFORMACIÓN DEL ESTUDIANTE:
-Nombre: ${state.userName}
-Email: ${state.userEmail}
-Fecha: ${timestamp}
-Duración: ${duration} segundos
-Sesión ID: ${state.sessionId}
+            // Momento más profundo (respuesta más larga)
+            const momentoProfundo = state.respuestas.length > 0 
+                ? state.respuestas.reduce((a, b) => a.length > b.length ? a : b)
+                : '';
 
-─────────────────────────────────────────────────────
+            // Patrones detectados
+            let patronesSuperf = [];
+            if (state.respuestas.some(r => r.length < 10)) {
+                patronesSuperf.push('respuestas muy breves');
+            }
+            if (state.respuestas.some(r => /^(sí|no|ok|bueno|está bien)$/i.test(r.trim()))) {
+                patronesSuperf.push('respuestas monosilábicas');
+            }
+            if (state.respuestas.filter(r => r.length > 50).length < state.respuestas.length / 2) {
+                patronesSuperf.push('pocas elaboraciones');
+            }
 
-RESULTADOS DE LA SESIÓN:
+            const report = `# EVALUACIÓN METACOGNITIVA - FLAVELL
+## Sesión de Reflexión Guiada
 
-Fase inicial: 1 - Planificación
-Fase final: ${state.fase} - ${faseLabels[state.fase]}
-Total de turnos: ${state.turno}
-Respuestas completadas: ${state.respuestas.length}
+---
 
-INDICADORES DETECTADOS:
-${state.indicators.length > 0 ? state.indicators.join('\n') : 'Ninguno'}
+## 📋 Información de la Sesión
 
-─────────────────────────────────────────────────────
+| Campo | Valor |
+|-------|-------|
+| **Estudiante** | ${state.userName} |
+| **Email** | ${state.userEmail} |
+| **Fecha** | ${timestamp} |
+| **Duración** | ${minutes}m ${seconds}s |
+| **ID Sesión** | \`${state.sessionId}\` |
 
-RESPUESTAS DEL ESTUDIANTE:
+---
 
-${state.respuestas.map((r, i) => `Respuesta ${i + 1}:\n"${r}"\n`).join('\n')}
+## 🎯 Resumen Ejecutivo
 
-─────────────────────────────────────────────────────
+- **Tarea inferida**: ${tareaInferida}
+- **Fase inicial**: 1 - Planificación
+- **Fase final**: ${state.fase} - ${faseLabels[state.fase]}
+- **Total de turnos**: ${state.turno}
+- **Respuestas completadas**: ${state.respuestas.length}
+- **Indicadores detectados**: ${state.indicators.length} de ${CONFIG.MIN_INDICATORS_TO_CLOSE} requeridos
 
-ANÁLISIS:
+---
 
-Calidad de respuestas: ${state.respuestas.length >= CONFIG.MIN_RESPONSES_TO_CLOSE ? 'Buena' : 'Regular'}
-Indicadores de metacognición: ${state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE ? 'Presentes' : 'Limitados'}
-Progresión de fases: ${state.fase > 1 ? 'Avanzó' : 'Se mantuvo'}
+## 💬 Diálogo Completo por Turnos
 
-─────────────────────────────────────────────────────
+### Turno 1: Apertura
+**Mira**: "${MIRA.apertura}"
 
-PRÓXIMOS PASOS:
+${state.respuestas.map((respuesta, indice) => {
+    const turno = indice + 2;
+    const preguntasPhase = MIRA.preguntas[state.fase] || MIRA.preguntas[1];
+    const preguntaIdx = (turno - 2) % preguntasPhase.length;
+    const pregunta = preguntasPhase[preguntaIdx];
+    
+    return `### Turno ${turno}
 
-1. Revisar las respuestas y reflexiones
-2. Guardar los aprendizajes principales
-3. Planificar cómo aplicar esto en la próxima tarea
+**Mira**: "${pregunta}"
 
-═══════════════════════════════════════════════════════
-Generado por FLAVELL - Agente Metacognitivo
-═══════════════════════════════════════════════════════`;
+**Estudiante**: "${respuesta}"
+
+---`;
+}).join('\n')}
+
+## 🔍 Análisis Metacognitivo
+
+### Indicadores Detectados
+${state.indicators.length > 0 
+    ? state.indicators.map(ind => {
+        const labels = {
+            'atribución_interna': '✓ **Atribución Interna**: El estudiante reconoce su responsabilidad en los resultados',
+            'inferencia_adaptativa': '✓ **Inferencia Adaptativa**: Propone cambios específicos para el futuro',
+            'síntesis_propia': '✓ **Síntesis Propia**: Elabora explicaciones con sus propias palabras',
+            'bordes_precisos': '✓ **Bordes Precisos**: Identifica claramente qué sabe y qué no'
+        };
+        return labels[ind] || \`✓ \${ind}\`;
+    }).join('\n')
+    : '- Ninguno detectado aún'
+}
+
+### Autorreflexión Lograda
+${state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE 
+    ? '✅ **SÍ** - El estudiante demostró metacognición genuina'
+    : state.indicators.length > 0
+    ? '⚠️ **PARCIAL** - Se detectaron algunos indicadores pero podría profundizar más'
+    : '❌ **NO** - Se requiere más trabajo para desarrollar metacognición'
+}
+
+### Calidad de Respuestas
+\`\`\`
+Respuestas breves: ${state.respuestas.filter(r => r.length < 20).length}
+Respuestas moderadas: ${state.respuestas.filter(r => r.length >= 20 && r.length < 100).length}
+Respuestas elaboradas: ${state.respuestas.filter(r => r.length >= 100).length}
+\`\`\`
+
+### Progresión de Fases
+- Fase inicial: 1 - Planificación
+- Fase final: ${state.fase} - ${faseLabels[state.fase]}
+- **Progreso**: ${state.fase > 1 ? '✓ El estudiante avanzó a fases más profundas' : 'Se mantuvo en planificación'}
+
+---
+
+## 💡 Momentos Clave
+
+### Respuesta Más Profunda
+> "${momentoProfundo}"
+
+---
+
+## ⚠️ Patrones Observados
+
+${patronesSuperf.length > 0 
+    ? patronesSuperf.map(p => \`- \${p}\`).join('\n')
+    : 'No se detectaron patrones superficiales significativos'
+}
+
+---
+
+## 📝 Notas para el Docente
+
+### Fortalezas
+${state.indicators.includes('atribución_interna') 
+    ? '- Estudiante responsable de sus procesos'
+    : ''
+}
+${state.indicators.includes('síntesis_propia')
+    ? '- Puede elaborar explicaciones con sus palabras'
+    : ''
+}
+${state.respuestas.length >= CONFIG.MIN_RESPONSES_TO_CLOSE
+    ? '- Completó suficientes respuestas para una evaluación robusta'
+    : ''
+}
+
+### Áreas de Mejora
+${state.indicators.length < CONFIG.MIN_INDICATORS_TO_CLOSE
+    ? '- Desarrollar más conciencia sobre el propio proceso'
+    : ''
+}
+${patronesSuperf.includes('respuestas muy breves')
+    ? '- Animar a elaborar más en las respuestas'
+    : ''
+}
+${state.fase === 1
+    ? '- Ayudar a pasar de la planificación a la ejecución'
+    : ''
+}
+
+### Recomendaciones
+1. Seguimiento personalizado sobre los indicadores detectados
+2. Practicar con preguntas que fuerzen mayor reflexión
+3. Revisar las respuestas más elaboradas para fortalecer esas áreas
+4. Crear un portafolio de aprendizajes para dar continuidad
+
+---
+
+## 📅 Próximos Pasos
+
+1. **Revisar** esta evaluación con el estudiante
+2. **Registrar** los avances en su portafolio
+3. **Planificar** sesiones de seguimiento según necesidades
+4. **Documentar** el progreso metacognitivo a lo largo del semestre
+
+---
+
+**Generado por FLAVELL - Agente Metacognitivo**  
+*${new Date().toISOString()}*`;
 
             return report;
         }
 
         function downloadSessionReport() {
             const report = generateSessionReport();
-            const blob = new Blob([report], { type: 'text/plain; charset=utf-8' });
+            
+            // Agregar BOM para UTF-8 (arregla caracteres raros)
+            const BOM = '\uFEFF';
+            const fullContent = BOM + report;
+            
+            // Crear blob con encoding UTF-8 explícito
+            const blob = new Blob([fullContent], { type: 'text/markdown; charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `FLAVELL-Evaluacion-${state.sessionId}.txt`;
+            // Cambiar a .md (markdown) para mejor lectura
+            link.download = `FLAVELL-Evaluacion-${state.sessionId}.md`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+            
+            console.log('✅ Reporte descargado:', link.download);
         }
 
         async function speakText(text) {
