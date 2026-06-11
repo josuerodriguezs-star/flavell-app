@@ -45,7 +45,6 @@
             position: relative;
         }
 
-        /* MODAL */
         .modal {
             display: none;
             position: fixed;
@@ -95,7 +94,6 @@
             margin-top: 30px;
         }
 
-        /* HEADER */
         .header {
             text-align: center;
             width: 100%;
@@ -133,16 +131,6 @@
             font-weight: 300;
         }
 
-        .header-safety {
-            font-size: 10px;
-            color: var(--status-red);
-            margin-top: 8px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* DIALOGUE AREA */
         .dialogue-area {
             flex: 1;
             display: flex;
@@ -218,7 +206,6 @@
             30% { opacity: 1; transform: translateY(-10px); }
         }
 
-        /* CONTROL AREA */
         .control-area {
             display: flex;
             flex-direction: column;
@@ -321,17 +308,11 @@
                 height: 120px; 
                 font-size: 56px;
             }
-            .container {
-                gap: 20px;
-            }
             .mira-text {
                 font-size: 18px;
             }
             .student-text {
                 font-size: 16px;
-            }
-            .header-title {
-                font-size: 32px;
             }
         }
     </style>
@@ -348,13 +329,11 @@
     </div>
 
     <div class="container hidden" id="appContainer">
-        
         <div class="header">
             <div class="header-title">FLAVELL</div>
             <div class="header-agent">Mira</div>
             <div class="header-user" id="userGreeting">Hola</div>
-            <div class="header-phase" id="phaseIndicator">Fase 1: Planificación</div>
-            <div class="header-safety" id="safetyIndicator"></div>
+            <div class="header-phase" id="phaseIndicator">Conectando...</div>
         </div>
 
         <div class="dialogue-area" id="dialogueArea"></div>
@@ -363,15 +342,13 @@
             <button class="mic-button available" id="micButton">🎤</button>
             <div class="status" id="statusText">Presiona para hablar</div>
         </div>
-
     </div>
 
     <script>
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
-            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycby...../exec?token=flavell-mira-token-2024-anáhuac-xyz123',
+            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycby.../exec?token=flavell-mira-token-2024',
             MAX_TURNS: 12,
-            MAX_FAILED_ATTEMPTS: 3,
             TTS_TIMEOUT: 8000,
             API: {
                 WHISPER: '/api/whisper',
@@ -388,36 +365,50 @@
             turno: 0,
             fase: 1,
             isRecording: false,
-            isProcessing: false,
             isSpeaking: false,
             mediaRecorder: null,
             audioChunks: [],
-            intentosFallidos: 0,
-            respuestasValidas: [],
-            respuestasInvalidas: [],
             sessionClosed: false,
-            motivoCierre: null,
-            currentMiraText: null,
+            respuestas: [],
             startTime: null,
-            lastActionTime: null
+            indicators: [],
+            lastActivityTime: null
         };
 
-        // ===== TIMING =====
-        function getLatency() {
-            if (!state.lastActionTime) return 0;
-            return Date.now() - state.lastActionTime;
-        }
+        // ===== ELIA'S MIRA LOGIC =====
+        const MIRA = {
+            apertura: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita? No importa si es una tarea, algo que leíste, algo que no te quedó claro, o algo que ya terminaste. Lo que sea.",
+            
+            preguntas: {
+                1: [
+                    "¿Qué entendiste que te estaban pidiendo hacer?",
+                    "¿Qué sabes ya sobre el tema antes de empezar?",
+                    "¿Por dónde crees que vas a arrancar?"
+                ],
+                2: [
+                    "¿Qué parte te está costando más trabajo?",
+                    "¿En algún momento paraste a checar si ibas bien?",
+                    "¿Hubo algo que no salió como esperabas?"
+                ],
+                3: [
+                    "¿Qué aprendiste hoy, con tus propias palabras?",
+                    "¿Te fue mejor o peor de lo que esperabas? ¿A qué le atribuyes eso?",
+                    "¿Qué parte sí entendiste bien y cuál se quedó en el aire?"
+                ]
+            },
 
-        function markAction() {
-            state.lastActionTime = Date.now();
-        }
+            cierres: {
+                exitoso: "Creo que llegaste a algo importante hoy. Guárdalo en algún lugar, porque ese tipo de cosas se olvidan rápido. Hasta la próxima.",
+                incompleto: "Quedamos a medias, pero el proceso ya empezó. Sigue pensando en eso cuando puedas.",
+                frustrado: "Está bien si hoy no salió. Hay sesiones así. Vuelve cuando tengas más energía para esto."
+            }
+        };
 
         function initGoogleAuth() {
             google.accounts.id.initialize({
                 client_id: CONFIG.GOOGLE_CLIENT_ID,
                 callback: handleGoogleLogin
             });
-
             google.accounts.id.renderButton(
                 document.getElementById('google-signin-button'),
                 { theme: 'outline', size: 'large', text: 'signin_with' }
@@ -431,14 +422,13 @@
                 const jsonPayload = decodeURIComponent(
                     atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
                 );
-
                 const userData = JSON.parse(jsonPayload);
                 state.userId = userData.sub;
                 state.userName = userData.name;
                 state.userEmail = userData.email;
                 state.sessionId = `${state.userId}-${Date.now()}`;
                 state.startTime = Date.now();
-                markAction();
+                state.lastActivityTime = Date.now();
 
                 document.getElementById('loginModal').classList.remove('active');
                 document.getElementById('appContainer').classList.remove('hidden');
@@ -447,7 +437,6 @@
                 startInterview();
             } catch (error) {
                 console.error('Auth error:', error);
-                updateStatus('Error en autenticación', 'error');
             }
         }
 
@@ -455,133 +444,82 @@
             state.turno = 1;
             state.fase = 1;
             updateStatus('Iniciando...', 'active');
-            markAction();
-
-            try {
-                const apertura = await callGPT('apertura', null);
-                showMiraText(apertura);
-                
-                setMicState('speaking');
-                await speakText(apertura);
-                markAction();
-                
-                logToSheet({ 
-                    turno: state.turno, 
-                    fase: 1, 
-                    speaker: 'mira', 
-                    tipo: 'apertura', 
-                    actividad: 'greeting',
-                    texto: apertura,
-                    latencia: getLatency(),
-                    indicadores: 'inicio_sesion'
-                });
-
-                updateStatus('Lee y presiona cuando estés listo', 'active');
-                setMicState('available');
-
-            } catch (error) {
-                console.error('Start error:', error);
-                updateStatus('Error al iniciar', 'error');
-                setMicState('available');
-            }
-        }
-
-        function isValidResponse(text) {
-            if (!text || text.trim().length === 0) return false;
-            if (text.trim().length < 3) return false;
-            if (/^[0-9\s\.\,\!\?]+$/.test(text.trim())) return false;
-            if (text.toLowerCase() === 'no' || text.toLowerCase() === 'sí' || text.toLowerCase() === 'si') return false;
-            return true;
-        }
-
-        function classifyResponse(text) {
-            const lower = text.toLowerCase();
-            
-            // Detectar si es respuesta corta o elaborada
-            if (text.split(' ').length < 5) {
-                return 'respuesta_breve';
-            } else if (text.split(' ').length >= 5 && text.split(' ').length < 15) {
-                return 'respuesta_moderada';
-            } else {
-                return 'respuesta_elaborada';
-            }
-        }
-
-        function handleFailedAttempt(userText) {
-            state.intentosFallidos++;
-            state.respuestasInvalidas.push({ turno: state.turno, texto: userText });
-
-            const remaining = CONFIG.MAX_FAILED_ATTEMPTS - state.intentosFallidos;
-
-            if (state.intentosFallidos >= CONFIG.MAX_FAILED_ATTEMPTS) {
-                closeSession('Demasiados intentos sin respuestas válidas');
-                return false;
-            }
-
-            updateSafetyIndicator();
-            return true;
-        }
-
-        function handleSuccessfulAttempt(userText) {
-            state.intentosFallidos = 0;
-            state.respuestasValidas.push({ turno: state.turno, texto: userText });
-            updateSafetyIndicator();
-        }
-
-        function updateSafetyIndicator() {
-            const el = document.getElementById('safetyIndicator');
-            if (state.intentosFallidos === 0) {
-                el.textContent = '';
-                el.style.display = 'none';
-            } else {
-                const remaining = CONFIG.MAX_FAILED_ATTEMPTS - state.intentosFallidos;
-                el.textContent = `⚠️ ${remaining} intento${remaining !== 1 ? 's' : ''} restante`;
-                el.style.display = 'block';
-            }
-        }
-
-        function closeSession(motivo) {
-            state.sessionClosed = true;
-            state.motivoCierre = motivo;
-            setMicState('closed');
-            updateStatus(`Sesión cerrada: ${motivo}`, 'warning');
+            showMiraText(MIRA.apertura);
+            setMicState('speaking');
+            await speakText(MIRA.apertura);
+            setMicState('available');
+            updateStatus('Presiona para hablar', 'active');
 
             logToSheet({
                 turno: state.turno,
                 fase: state.fase,
-                speaker: 'sistema',
-                tipo: 'cierre',
-                actividad: 'session_close',
-                texto: motivo,
-                latencia: getLatency(),
-                indicadores: `intentos_fallidos:${state.intentosFallidos}|respuestas_validas:${state.respuestasValidas.length}|respuestas_invalidas:${state.respuestasInvalidas.length}`
+                speaker: 'mira',
+                tipo: 'apertura',
+                texto: MIRA.apertura
             });
+        }
+
+        function detectPhase(text) {
+            const lower = text.toLowerCase();
+            if (/terminé|acabé|finalizé|completé|aprendí|descubrí|entendí|me di cuenta|resultó|funcionó|no funcionó|conclusión|resultado|logré|conseguí|dominé|comprendí|asimilé|reflexiono|pensé|analice|evalúe|consideré|mejoraría|cambiaría|siguiente vez|próxima|error|equivocación|reto|desafío/.test(lower)) 
+                return 3;
+            if (/empecé|estoy|hice|haciendo|leyendo|escribiendo|resolviendo|calculando|analizando|buscando|investigando|encontré|revisando|checando|probando|intentando|aplicando|usando|ejecutando|realizando|desarrollando|construyendo|creando|practique|trabaje|intente|realice|desarrollo|construyo|cree/.test(lower)) 
+                return 2;
+            return 1;
+        }
+
+        function detectIndicators(text) {
+            const lower = text.toLowerCase();
+            const detected = [];
+
+            // Atribución interna
+            if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente/.test(lower)) {
+                detected.push('atribución_interna');
+            }
+
+            // Inferencia adaptativa
+            if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente/.test(lower)) {
+                detected.push('inferencia_adaptativa');
+            }
+
+            // Síntesis propia
+            if (text.length > 50 && text.split(' ').length > 10) {
+                detected.push('síntesis_propia');
+            }
+
+            // Bordes precisos
+            if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente/.test(lower)) {
+                detected.push('bordes_precisos');
+            }
+
+            return detected;
+        }
+
+        function shouldClose() {
+            if (state.respuestas.length < 2) return false;
+            const indicators = state.indicators;
+            return indicators.length >= 1;
         }
 
         async function startRecording() {
             if (state.sessionClosed || state.isSpeaking) return;
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 state.mediaRecorder = new MediaRecorder(stream);
                 state.audioChunks = [];
-
                 state.mediaRecorder.ondataavailable = (event) => {
                     state.audioChunks.push(event.data);
                 };
-
                 state.mediaRecorder.onstop = async () => {
                     await processAudio();
                 };
-
                 state.mediaRecorder.start();
                 state.isRecording = true;
                 setMicState('recording');
                 updateStatus('Hablando...', 'active');
-
             } catch (error) {
                 console.error('Mic error:', error);
-                updateStatus('Error acceso micrófono', 'error');
+                updateStatus('Error micrófono', 'error');
             }
         }
 
@@ -597,12 +535,10 @@
         async function processAudio() {
             try {
                 const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
-                
                 const reader = new FileReader();
                 reader.onload = async () => {
                     try {
                         const audioBase64 = reader.result.split(',')[1];
-                        
                         const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -616,133 +552,132 @@
                         const transcriptData = await transcriptResponse.json();
                         const userText = transcriptData.text || '';
 
-                        if (!userText.trim()) {
+                        if (!userText.trim() || userText.length < 3) {
                             updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
                             setMicState('available');
                             return;
                         }
 
-                        if (!isValidResponse(userText)) {
-                            showStudentText(`"${userText}" - No parece válida.`);
-                            
-                            if (!handleFailedAttempt(userText)) {
-                                return;
-                            }
-
-                            const responseType = classifyResponse(userText);
-                            logToSheet({ 
-                                turno: state.turno, 
-                                fase: state.fase, 
-                                speaker: 'student', 
-                                tipo: 'respuesta_invalida', 
-                                actividad: responseType,
-                                texto: userText,
-                                latencia: getLatency(),
-                                indicadores: `intentos_fallidos:${state.intentosFallidos}`
-                            });
-
-                            updateStatus('Respuesta no válida. Intenta de nuevo.', 'error');
-                            setMicState('available');
-                            return;
-                        }
-
-                        handleSuccessfulAttempt(userText);
+                        // Log respuesta del estudiante
                         showStudentText(userText);
-                        markAction();
-
-                        const responseType = classifyResponse(userText);
-                        logToSheet({ 
-                            turno: state.turno + 0.5, 
-                            fase: state.fase, 
-                            speaker: 'student', 
-                            tipo: 'respuesta', 
-                            actividad: responseType,
-                            texto: userText,
-                            latencia: getLatency(),
-                            indicadores: `valida:true`
+                        state.respuestas.push(userText);
+                        logToSheet({
+                            turno: state.turno,
+                            fase: state.fase,
+                            speaker: 'student',
+                            tipo: 'respuesta',
+                            texto: userText
                         });
 
+                        // Detectar fase
                         const newPhase = detectPhase(userText);
                         if (newPhase !== state.fase) {
                             state.fase = newPhase;
                             updatePhase(newPhase);
                         }
 
+                        // Detectar indicadores
+                        const newIndicators = detectIndicators(userText);
+                        state.indicators.push(...newIndicators);
+
+                        // Siguiente turno
                         state.turno++;
-                        updateStatus('Mira está reflexionando...', 'active');
-                        showTyping();
-                        setMicState('processing');
+                        state.lastActivityTime = Date.now();
 
-                        const response = await callGPT(state.fase, userText);
-                        hideTyping();
-                        markAction();
-
-                        clearDialogue();
-                        showMiraText(response);
-                        
-                        setMicState('speaking');
-                        updateStatus('Mira está hablando...', 'active');
-                        await speakText(response);
-                        markAction();
-
-                        logToSheet({ 
-                            turno: state.turno, 
-                            fase: state.fase, 
-                            speaker: 'mira', 
-                            tipo: 'respuesta', 
-                            actividad: 'reflexion',
-                            texto: response,
-                            latencia: getLatency(),
-                            indicadores: `fase:${state.fase}`
-                        });
-
-                        if (state.turno >= CONFIG.MAX_TURNS) {
-                            closeSession('Sesión completada');
-                        } else {
-                            updateStatus('Lee y presiona cuando estés listo', 'active');
-                            setMicState('available');
+                        // Verificar cierre
+                        if (shouldClose()) {
+                            await closeSession();
+                            return;
                         }
+
+                        if (state.turno > CONFIG.MAX_TURNS) {
+                            await closeSession();
+                            return;
+                        }
+
+                        // Siguiente pregunta
+                        await askNextQuestion();
+
                     } catch (error) {
                         console.error('Processing error:', error);
-                        updateStatus('Error procesando audio', 'error');
+                        updateStatus('Error procesando', 'error');
                         setMicState('available');
                     }
                 };
-
                 reader.readAsDataURL(audioBlob);
-
             } catch (error) {
                 console.error('Audio error:', error);
-                hideTyping();
-                updateStatus('Error procesando audio', 'error');
+                updateStatus('Error de audio', 'error');
                 setMicState('available');
             }
         }
 
-        async function callGPT(phase, userText) {
-            try {
-                const systemPrompt = buildSystemPrompt(phase);
-                const userPrompt = buildUserPrompt(phase, userText);
+        async function askNextQuestion() {
+            updateStatus('Mira reflexiona...', 'active');
+            showTyping();
+            setMicState('processing');
 
-                const response = await fetch(CONFIG.API.GPT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ systemPrompt, userMessage: userPrompt })
+            try {
+                // Elegir pregunta de la fase actual
+                const preguntasPhase = MIRA.preguntas[state.fase];
+                const preguntaIdx = (state.turno - 2) % preguntasPhase.length;
+                const nextQuestion = preguntasPhase[preguntaIdx];
+
+                hideTyping();
+                clearDialogue();
+                showMiraText(nextQuestion);
+                setMicState('speaking');
+                await speakText(nextQuestion);
+
+                logToSheet({
+                    turno: state.turno,
+                    fase: state.fase,
+                    speaker: 'mira',
+                    tipo: 'pregunta',
+                    texto: nextQuestion
                 });
 
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'GPT error');
-                return data.text;
+                setMicState('available');
+                updateStatus('Presiona para hablar', 'active');
 
             } catch (error) {
-                console.error('GPT error:', error);
-                return 'Disculpa, hubo un error. Intenta de nuevo.';
+                console.error('Question error:', error);
+                updateStatus('Error', 'error');
+                setMicState('available');
             }
+        }
+
+        async function closeSession() {
+            state.sessionClosed = true;
+            setMicState('closed');
+
+            // Elegir cierre
+            let closeMessage = MIRA.cierres.exitoso;
+            if (state.indicators.length === 0) {
+                closeMessage = MIRA.cierres.frustrado;
+            } else if (state.respuestas.length < 3) {
+                closeMessage = MIRA.cierres.incompleto;
+            }
+
+            clearDialogue();
+            showMiraText(closeMessage);
+            setMicState('speaking');
+            await speakText(closeMessage);
+            updateStatus('Sesión completada', 'warning');
+
+            logToSheet({
+                turno: state.turno,
+                fase: state.fase,
+                speaker: 'mira',
+                tipo: 'cierre',
+                texto: closeMessage,
+                indicadores: state.indicators.join('|'),
+                respuestasCount: state.respuestas.length
+            });
         }
 
         async function speakText(text) {
             state.isSpeaking = true;
-            
             try {
                 const response = await fetch(CONFIG.API.TTS, {
                     method: 'POST',
@@ -751,16 +686,14 @@
                 });
 
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'TTS error');
+                if (!response.ok) throw new Error(data.error);
 
                 const audioUrl = `data:audio/mp3;base64,${data.audio}`;
                 const audio = new Audio(audioUrl);
 
                 return new Promise((resolve) => {
-                    // TIMEOUT: Si TTS no termina en 8s, continuar
                     const timeout = setTimeout(() => {
                         state.isSpeaking = false;
-                        console.warn('TTS timeout - continuando');
                         resolve();
                     }, CONFIG.TTS_TIMEOUT);
 
@@ -773,14 +706,12 @@
                     audio.onerror = () => {
                         clearTimeout(timeout);
                         state.isSpeaking = false;
-                        console.warn('TTS error - continuando');
                         resolve();
                     };
 
                     audio.play().catch(() => {
                         clearTimeout(timeout);
                         state.isSpeaking = false;
-                        console.warn('TTS play failed - continuando');
                         resolve();
                     });
                 });
@@ -791,73 +722,37 @@
             }
         }
 
-        function buildSystemPrompt(phase) {
-            const base = `Eres Mira, evaluador metacognitivo experto. REGLAS: Responde en español, máximo 2-3 oraciones, sin asteriscos.`;
-            const guides = {
-                1: 'FASE 1 - PLANIFICACIÓN: Pregunta sobre comprensión de tarea, estrategias, objetivos.',
-                2: 'FASE 2 - EJECUCIÓN: Pregunta qué cuesta, si chequea progreso, dificultades.',
-                3: 'FASE 3 - REFLEXIÓN: Pregunta qué aprendió, qué haría diferente, logros.'
-            };
-            return base + '\n' + guides[phase];
-        }
-
-        function buildUserPrompt(phase, userText) {
-            if (!userText) return 'Comienza: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita?"';
-            return `Respuesta: "${userText}"\n\nUna pregunta para FASE ${phase}.`;
-        }
-
-        function detectPhase(text) {
-            const lower = text.toLowerCase();
-            
-            // FASE 3 - REFLEXIÓN (conclusión)
-            if (/terminé|acabé|finalizé|completé|aprendí|descubrí|entendí|me di cuenta|resultó|funcionó|no funcionó|conclusión|resultado|logré|conseguí|dominé|comprendí|asimilé|reflexiono|considera|pensé|analice|evalúe|consideré|mejoraría|cambiaría|siguiente vez|próxima|error|equivocación|reto|desafío/.test(lower)) 
-                return 3;
-            
-            // FASE 2 - EJECUCIÓN (en proceso)
-            if (/empecé|estoy|hice|haciendo|leyendo|escribiendo|resolviendo|calculando|analizando|buscando|investigando|encontré|revisando|checando|probando|intentando|aplicando|usando|usando|ejecutando|realizando|desarrollando|construyendo|creando|practique|trabaje|intente|realice|desarrollo|construyo|cree/.test(lower)) 
-                return 2;
-            
-            // FASE 1 - PLANIFICACIÓN (default)
-            return 1;
-        }
-
         async function logToSheet(data) {
             try {
                 const payload = {
-                    timestamp: new Date().toISOString(),
                     sessionId: state.sessionId,
                     userId: state.userId,
-                    userEmail: state.userEmail,
                     userName: state.userName,
+                    userEmail: state.userEmail,
                     turno: data.turno,
                     fase: data.fase,
                     speaker: data.speaker,
                     tipo: data.tipo,
-                    actividad: data.actividad || '',
                     texto: data.texto || '',
-                    latencia: data.latencia || 0,
-                    indicadores: data.indicadores || ''
+                    indicadores: data.indicadores || '',
+                    respuestasCount: data.respuestasCount || ''
                 };
 
-                console.log('📊 Logging to sheet:', payload);
+                console.log('📊 Log:', payload);
 
                 await fetch(CONFIG.SHEETS_WEBHOOK, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
-
-                console.log('✅ Logged to sheet');
             } catch (error) {
-                console.error('Sheet logging error:', error);
+                console.error('Log error:', error);
             }
         }
 
         function showMiraText(text) {
-            state.currentMiraText = text;
             const dialogue = document.getElementById('dialogueArea');
             dialogue.innerHTML = '';
-            
             const div = document.createElement('div');
             div.className = 'mira-text';
             div.textContent = text;
