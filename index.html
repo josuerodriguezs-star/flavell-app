@@ -41,8 +41,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 50px;
+            justify-content: space-between;
             position: relative;
         }
 
@@ -103,7 +102,7 @@
         }
 
         .header-title {
-            font-size: 42px;
+            font-size: 36px;
             font-weight: 700;
             color: var(--text-white);
             margin-bottom: 8px;
@@ -111,70 +110,124 @@
         }
 
         .header-agent {
-            font-size: 16px;
+            font-size: 14px;
             color: var(--accent-orange);
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .header-user {
-            font-size: 18px;
+            font-size: 16px;
             color: var(--text-gray);
-            margin-top: 6px;
+            margin-top: 4px;
             font-weight: 400;
         }
 
         .header-phase {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-gray-dark);
-            margin-top: 10px;
+            margin-top: 8px;
             font-style: italic;
             font-weight: 300;
         }
 
         .header-safety {
-            font-size: 12px;
+            font-size: 10px;
             color: var(--status-red);
-            margin-top: 10px;
+            margin-top: 8px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* CONTENT */
-        .content {
+        /* DIALOGUE AREA - Permanente */
+        .dialogue-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
-            gap: 30px;
-            position: relative;
+            padding: 30px 20px;
+            gap: 20px;
+            min-height: 300px;
         }
 
-        /* FLOATING TEXT - LARGE */
-        .floating-text {
-            font-size: 22px;
+        /* MIRA'S TEXT - Permanece visible */
+        .mira-text {
+            font-size: 20px;
             line-height: 1.8;
             color: var(--text-white);
             text-align: center;
             max-width: 95%;
-            animation: fadeInOut 8s ease-in-out forwards;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            letter-spacing: 0.5px;
             font-weight: 400;
+            letter-spacing: 0.5px;
+            animation: slideIn 0.5s ease-out;
         }
 
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(-50px); }
-            10% { opacity: 1; transform: translateY(-50%); }
-            90% { opacity: 1; transform: translateY(-50%); }
-            100% { opacity: 0; transform: translateY(-20px); }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* STUDENT'S TEXT - Temporal con fade */
+        .student-text {
+            font-size: 18px;
+            line-height: 1.7;
+            color: var(--text-gray);
+            text-align: center;
+            max-width: 95%;
+            font-weight: 400;
+            letter-spacing: 0.4px;
+            animation: fadeOut 6s ease-in-out forwards;
+            margin-top: 20px;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* TYPING DOTS */
+        .typing-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-orange);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-10px); }
+        }
+
+        /* CONTROL AREA */
+        .control-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
         }
 
         /* MIC BUTTON */
@@ -245,13 +298,11 @@
 
         /* STATUS */
         .status {
-            font-size: 16px;
+            font-size: 14px;
             color: var(--text-gray);
             text-align: center;
-            min-height: 24px;
+            min-height: 20px;
             letter-spacing: 0.5px;
-            position: absolute;
-            bottom: 0;
             font-weight: 400;
         }
 
@@ -265,31 +316,6 @@
             font-weight: 700;
         }
 
-        /* TYPING DOTS */
-        .typing-dots {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            position: absolute;
-            bottom: 50px;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-orange);
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typingBounce {
-            0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-10px); }
-        }
-
         .hidden {
             display: none !important;
         }
@@ -301,13 +327,16 @@
                 font-size: 56px;
             }
             .container {
-                gap: 40px;
+                gap: 20px;
             }
-            .floating-text {
+            .mira-text {
                 font-size: 18px;
             }
+            .student-text {
+                font-size: 16px;
+            }
             .header-title {
-                font-size: 36px;
+                font-size: 32px;
             }
         }
     </style>
@@ -333,7 +362,12 @@
             <div class="header-safety" id="safetyIndicator"></div>
         </div>
 
-        <div class="content" id="appContent">
+        <div class="dialogue-area" id="dialogueArea">
+            <!-- Aquí aparecerá el texto de Mira (permanente) -->
+            <!-- Y el texto del estudiante (temporal con fade) -->
+        </div>
+
+        <div class="control-area">
             <button class="mic-button available" id="micButton">🎤</button>
             <div class="status" id="statusText">Presiona para hablar</div>
         </div>
@@ -369,7 +403,8 @@
             respuestasValidas: [],
             respuestasInvalidas: [],
             sessionClosed: false,
-            motivoCierre: null
+            motivoCierre: null,
+            currentMiraText: null
         };
 
         function initGoogleAuth() {
@@ -416,7 +451,7 @@
 
             try {
                 const apertura = await callGPT('apertura', null);
-                showFloatingText(apertura);
+                showMiraText(apertura);
                 
                 setMicState('speaking');
                 await speakText(apertura);
@@ -430,7 +465,7 @@
                     intentosFallidos: state.intentosFallidos
                 });
 
-                updateStatus('Presiona para hablar', 'active');
+                updateStatus('Lee y presiona cuando estés listo', 'active');
                 setMicState('available');
 
             } catch (error) {
@@ -518,7 +553,7 @@
                 state.mediaRecorder.start();
                 state.isRecording = true;
                 setMicState('recording');
-                updateStatus('Escuchando...', 'active');
+                updateStatus('Hablando...', 'active');
 
             } catch (error) {
                 console.error('Mic error:', error);
@@ -539,97 +574,104 @@
             try {
                 const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
                 
-                const formData = new FormData();
-                formData.append('file', audioBlob, 'audio.webm');
-
-                const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!transcriptResponse.ok) {
-                    const errorData = await transcriptResponse.json();
-                    console.error('Whisper error:', transcriptResponse.status, errorData);
-                    throw new Error(`Whisper error: ${transcriptResponse.status}`);
-                }
-
-                const transcriptData = await transcriptResponse.json();
-                const userText = transcriptData.text || '';
-
-                if (!userText.trim()) {
-                    updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
-                    setMicState('available');
-                    return;
-                }
-
-                if (!isValidResponse(userText)) {
-                    showFloatingText(`"${userText}" - No parece válida.`);
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const audioBase64 = reader.result.split(',')[1];
                     
-                    if (!handleFailedAttempt(userText)) {
+                    const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: audioBase64 })
+                    });
+
+                    if (!transcriptResponse.ok) {
+                        const errorData = await transcriptResponse.json();
+                        console.error('Whisper error:', transcriptResponse.status, errorData);
+                        throw new Error(`Whisper error: ${transcriptResponse.status}`);
+                    }
+
+                    const transcriptData = await transcriptResponse.json();
+                    const userText = transcriptData.text || '';
+
+                    if (!userText.trim()) {
+                        updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
+                        setMicState('available');
                         return;
                     }
 
+                    if (!isValidResponse(userText)) {
+                        showStudentText(`"${userText}" - No parece válida.`);
+                        
+                        if (!handleFailedAttempt(userText)) {
+                            return;
+                        }
+
+                        logToSheet({ 
+                            turno: state.turno, 
+                            fase: state.fase, 
+                            speaker: 'student', 
+                            tipo: 'respuesta_invalida', 
+                            texto: userText,
+                            intentosFallidos: state.intentosFallidos
+                        });
+
+                        updateStatus('Respuesta no válida. Intenta de nuevo.', 'error');
+                        setMicState('available');
+                        return;
+                    }
+
+                    handleSuccessfulAttempt(userText);
+                    showStudentText(userText);
+
                     logToSheet({ 
-                        turno: state.turno, 
+                        turno: state.turno + 0.5, 
                         fase: state.fase, 
                         speaker: 'student', 
-                        tipo: 'respuesta_invalida', 
+                        tipo: 'respuesta', 
                         texto: userText,
                         intentosFallidos: state.intentosFallidos
                     });
 
-                    updateStatus('Respuesta no válida. Intenta de nuevo.', 'error');
-                    setMicState('available');
-                    return;
-                }
+                    const newPhase = detectPhase(userText);
+                    if (newPhase !== state.fase) {
+                        state.fase = newPhase;
+                        updatePhase(newPhase);
+                    }
 
-                handleSuccessfulAttempt(userText);
-                showFloatingText(userText);
+                    state.turno++;
+                    updateStatus('Mira está reflexionando...', 'active');
+                    showTyping();
+                    setMicState('processing');
 
-                logToSheet({ 
-                    turno: state.turno + 0.5, 
-                    fase: state.fase, 
-                    speaker: 'student', 
-                    tipo: 'respuesta', 
-                    texto: userText,
-                    intentosFallidos: state.intentosFallidos
-                });
+                    const response = await callGPT(state.fase, userText);
+                    hideTyping();
 
-                const newPhase = detectPhase(userText);
-                if (newPhase !== state.fase) {
-                    state.fase = newPhase;
-                    updatePhase(newPhase);
-                }
+                    // LIMPIAR texto del estudiante y mostrar Mira
+                    clearDialogue();
+                    showMiraText(response);
+                    
+                    setMicState('speaking');
+                    updateStatus('Mira está hablando...', 'active');
+                    await speakText(response);
 
-                state.turno++;
-                updateStatus('Reflexionando...', 'active');
-                showTyping();
-                setMicState('processing');
+                    logToSheet({ 
+                        turno: state.turno, 
+                        fase: state.fase, 
+                        speaker: 'mira', 
+                        tipo: 'respuesta', 
+                        texto: response,
+                        intentosFallidos: state.intentosFallidos
+                    });
 
-                const response = await callGPT(state.fase, userText);
-                hideTyping();
+                    if (state.turno >= CONFIG.MAX_TURNS) {
+                        closeSession('Sesión completada');
+                    } else {
+                        updateStatus('Lee y presiona cuando estés listo', 'active');
+                        setMicState('available');
+                    }
+                };
 
-                showFloatingText(response);
-                
-                setMicState('speaking');
-                updateStatus('Mira está hablando...', 'active');
-                await speakText(response);
-
-                logToSheet({ 
-                    turno: state.turno, 
-                    fase: state.fase, 
-                    speaker: 'mira', 
-                    tipo: 'respuesta', 
-                    texto: response,
-                    intentosFallidos: state.intentosFallidos
-                });
-
-                if (state.turno >= CONFIG.MAX_TURNS) {
-                    closeSession('Sesión completada');
-                } else {
-                    updateStatus('Presiona para hablar', 'active');
-                    setMicState('available');
-                }
+                reader.readAsDataURL(audioBlob);
 
             } catch (error) {
                 console.error('Audio error:', error);
@@ -737,25 +779,43 @@
             }
         }
 
-        function showFloatingText(text) {
-            document.querySelectorAll('.floating-text').forEach(el => el.remove());
+        // ===== UI DIALOGUE =====
+        function showMiraText(text) {
+            state.currentMiraText = text;
+            const dialogue = document.getElementById('dialogueArea');
+            
+            // Limpiar textos anteriores (mantener estructura)
+            dialogue.innerHTML = '';
+            
             const div = document.createElement('div');
-            div.className = 'floating-text';
+            div.className = 'mira-text';
             div.textContent = text;
-            document.getElementById('appContent').appendChild(div);
-            setTimeout(() => div.remove(), 8000);
+            dialogue.appendChild(div);
+        }
+
+        function showStudentText(text) {
+            const dialogue = document.getElementById('dialogueArea');
+            const div = document.createElement('div');
+            div.className = 'student-text';
+            div.textContent = text;
+            dialogue.appendChild(div);
         }
 
         function showTyping() {
+            const dialogue = document.getElementById('dialogueArea');
             const div = document.createElement('div');
             div.id = 'typingIndicator';
             div.className = 'typing-dots';
             div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-            document.getElementById('appContent').appendChild(div);
+            dialogue.appendChild(div);
         }
 
         function hideTyping() {
             document.getElementById('typingIndicator')?.remove();
+        }
+
+        function clearDialogue() {
+            document.getElementById('dialogueArea').innerHTML = '';
         }
 
         function updateStatus(text, type = '') {
