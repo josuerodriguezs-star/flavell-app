@@ -9,96 +9,122 @@ export default async function handler(req, res) {
     }
 
     try {
-        let buffers = [];
-
-        await new Promise((resolve, reject) => {
-            req.on('data', (chunk) => {
-                buffers.push(chunk);
-            });
-            req.on('end', resolve);
-            req.on('error', reject);
-        });
-
-        const buffer = Buffer.concat(buffers);
-
-        if (buffer.length === 0) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
-
-        const contentType = req.headers['content-type'] || '';
-        const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+        // El navegador envía FormData multipart
+        // Vercel ya parsea esto automáticamente en req.body
         
-        if (!boundaryMatch) {
-            return res.status(400).json({ error: 'Invalid content-type' });
+        // Buscar el archivo en req.files o req.body.file
+        let audioBuffer = null;
+
+        // Opción 1: Si viene en req.files (Vercel next.js api)
+        if (req.files && req.files.file) {
+            audioBuffer = req.files.file.data;
+        }
+        // Opción 2: Si viene como stream en req
+        else {
+            // Leer directamente del stream
+            const chunks = [];
+            
+            await new Promise((resolve, reject) => {
+                req.on('data', chunk => {
+                    chunks.push(chunk);
+                });
+                
+                req.on('end', () => {
+                    resolve();
+                });
+                
+                req.on('error', reject);
+            });
+
+            if (chunks.length === 0) {
+                return res.status(400).json({ error: 'No audio data received' });
+            }
+
+            const buffer = Buffer.concat(chunks);
+            
+            // Extraer audio del multipart manualmente (simple)
+            const contentType = req.headers['content-type'] || '';
+            const boundaryMatch = contentType.match(/boundary=([^\s;]+)/);
+            
+            if (!boundaryMatch) {
+                return res.status(400).json({ error: 'No boundary found' });
+            }
+
+            const boundary = boundaryMatch[1].replace(/"/g, '');
+            
+            // Buscar los boundary markers
+            const startStr = `--${boundary}`;
+            const endStr = `\r\n--${boundary}`;
+            
+            const startIdx = buffer.indexOf(startStr);
+            const endIdx = buffer.indexOf(endStr, startIdx + 1);
+            
+            if (startIdx === -1 || endIdx === -1) {
+                return res.status(400).json({ error: 'Invalid multipart format' });
+            }
+
+            // Buscar el double CRLF que separa headers de body
+            const headerEndStr = '\r\n\r\n';
+            const headerEndIdx = buffer.indexOf(headerEndStr, startIdx);
+            
+            if (headerEndIdx === -1) {
+                return res.status(400).json({ error: 'Invalid headers' });
+            }
+
+            // Extraer audio (entre header end y next boundary)
+            audioBuffer = buffer.slice(headerEndIdx + 4, endIdx);
         }
 
-        const boundary = boundaryMatch[1];
-        const startMarker = Buffer.from(`--${boundary}`);
-        const endMarker = Buffer.from(`\r\n--${boundary}`);
-
-        let startIdx = buffer.indexOf(startMarker);
-        if (startIdx === -1) {
-            return res.status(400).json({ error: 'File section not found' });
-        }
-
-        const headerEnd = buffer.indexOf(Buffer.from('\r\n\r\n'), startIdx);
-        if (headerEnd === -1) {
-            return res.status(400).json({ error: 'Invalid multipart format' });
-        }
-
-        let endIdx = buffer.indexOf(endMarker, headerEnd);
-        if (endIdx === -1) {
-            endIdx = buffer.length - 2;
-        }
-
-        const audioBuffer = buffer.slice(headerEnd + 4, endIdx);
-
-        if (audioBuffer.length === 0) {
+        if (!audioBuffer || audioBuffer.length === 0) {
             return res.status(400).json({ error: 'Empty audio file' });
         }
 
-        const boundary2 = String(Math.random()).substring(2);
-        const parts = [];
-
-        parts.push(`--${boundary2}`);
-        parts.push('Content-Disposition: form-data; name="file"; filename="audio.webm"');
-        parts.push('Content-Type: audio/webm');
-        parts.push('');
-
-        const headerBuffer = Buffer.from(parts.join('\r\n') + '\r\n');
+        // Construir multipart para OpenAI
+        const boundary = String(Math.random()).substring(2);
         
+        const filePart = Buffer.from(
+            `--${boundary}\r\n` +
+            'Content-Disposition: form-data; name="file"; filename="audio.webm"\r\n' +
+            'Content-Type: audio/webm\r\n' +
+            '\r\n'
+        );
+
         const modelPart = Buffer.from(
-            `\r\n--${boundary2}\r\n` +
+            `\r\n--${boundary}\r\n` +
             'Content-Disposition: form-data; name="model"\r\n' +
             '\r\n' +
             'whisper-1\r\n' +
-            `--${boundary2}--\r\n`
+            `--${boundary}--\r\n`
         );
 
-        const finalPayload = Buffer.concat([headerBuffer, audioBuffer, modelPart]);
+        const payload = Buffer.concat([filePart, audioBuffer, modelPart]);
 
+        // Llamar Whisper API
         const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': `multipart/form-data; boundary=${boundary2}`
+                'Content-Type': `multipart/form-data; boundary=${boundary}`
             },
-            body: finalPayload
+            body: payload
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-            console.error('Whisper error:', data);
+            console.error('Whisper API error:', {
+                status: response.status,
+                error: data.error
+            });
             return res.status(response.status).json({ 
-                error: data.error?.message || 'Whisper API error' 
+                error: data.error?.message || 'Whisper API failed' 
             });
         }
 
         return res.status(200).json({ text: data.text || '' });
 
     } catch (error) {
-        console.error('Handler error:', error);
+        console.error('Whisper handler error:', error.message);
         return res.status(500).json({ error: error.message });
     }
 }
