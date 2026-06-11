@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLAVELL — Evaluación Metacognitiva</title>
+    <title>FLAVELL — Evaluación Metacognitiva por Voz</title>
     <script src="https://accounts.google.com/gsi/client"></script>
     <style>
-        /* ===== RESET Y VARIABLES ===== */
         * {
             margin: 0;
             padding: 0;
@@ -17,17 +16,13 @@
             --bg-primary: #0a0e27;
             --bg-secondary: #111829;
             --bg-tertiary: #0f1a33;
-            --bg-hover: #1a2847;
-            --border-color: #1a2847;
             --text-primary: #e8e8e8;
             --text-secondary: #888888;
             --accent-orange: #ff9d4d;
-            --accent-orange-light: rgba(255, 157, 77, 0.15);
-            --accent-orange-border: rgba(255, 157, 77, 0.2);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -35,13 +30,11 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            overflow-x: hidden;
         }
 
-        /* ===== CONTENEDOR PRINCIPAL ===== */
         .container {
             width: 100%;
-            max-width: 720px;
+            max-width: 600px;
             background: var(--bg-secondary);
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
@@ -49,273 +42,10 @@
             display: flex;
             flex-direction: column;
             height: 90vh;
-            border: 1px solid var(--border-color);
+            border: 1px solid #1a2847;
         }
 
-        /* ===== BARRA SUPERIOR ===== */
-        .top-bar {
-            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-hover) 100%);
-            padding: 18px 24px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex: 0 0 auto;
-        }
-
-        .top-bar-left {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .app-title {
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #fff;
-        }
-
-        .app-subtitle {
-            font-size: 11px;
-            color: var(--text-secondary);
-            letter-spacing: 0.3px;
-        }
-
-        .phase-badge {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent-orange);
-            background: var(--accent-orange-light);
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: 1px solid var(--accent-orange-border);
-            white-space: nowrap;
-        }
-
-        /* ===== ÁREA DE CONVERSACIÓN ===== */
-        .conversation-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            scroll-behavior: smooth;
-        }
-
-        .conversation-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .conversation-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .conversation-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 157, 77, 0.3);
-            border-radius: 3px;
-        }
-
-        .conversation-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 157, 77, 0.5);
-        }
-
-        /* ===== MENSAJES ===== */
-        .message {
-            display: flex;
-            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            opacity: 0;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.mira-msg {
-            justify-content: flex-start;
-        }
-
-        .message.student-msg {
-            justify-content: flex-end;
-        }
-
-        .message-bubble {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.55;
-            word-wrap: break-word;
-            animation: bubbleIn 0.3s ease;
-        }
-
-        @keyframes bubbleIn {
-            from {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .message.mira-msg .message-bubble {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-            border-left: 3px solid var(--accent-orange);
-        }
-
-        .message.student-msg .message-bubble {
-            background: var(--accent-orange-light);
-            color: var(--text-primary);
-            border-right: 3px solid var(--accent-orange);
-        }
-
-        /* ===== INDICADOR DE ESCRITURA ===== */
-        .typing-container {
-            display: flex;
-            gap: 6px;
-            padding: 12px 16px;
-            background: var(--bg-hover);
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-orange);
-            width: fit-content;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-orange);
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(1) {
-            animation-delay: 0s;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typingBounce {
-            0%, 60%, 100% {
-                opacity: 0.3;
-                transform: translateY(0);
-            }
-            30% {
-                opacity: 1;
-                transform: translateY(-8px);
-            }
-        }
-
-        /* ===== BARRA DE ESTADO ===== */
-        .status-bar {
-            background: var(--bg-tertiary);
-            padding: 12px 24px;
-            border-top: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-align: center;
-            letter-spacing: 0.4px;
-            flex: 0 0 auto;
-            transition: color 0.2s ease;
-        }
-
-        .status-bar.active {
-            color: var(--accent-orange);
-            font-weight: 600;
-        }
-
-        .status-bar.error {
-            color: #ff6b6b;
-        }
-
-        /* ===== ÁREA DE ENTRADA ===== */
-        .input-container {
-            background: var(--bg-tertiary);
-            padding: 16px 24px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 10px;
-            flex: 0 0 auto;
-        }
-
-        .input-field {
-            flex: 1;
-            background: var(--bg-hover);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 11px 14px;
-            color: var(--text-primary);
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        .input-field::placeholder {
-            color: var(--text-secondary);
-        }
-
-        .input-field:focus {
-            border-color: var(--accent-orange);
-            box-shadow: 0 0 0 3px var(--accent-orange-light);
-        }
-
-        .input-field:disabled {
-            background: rgba(26, 40, 71, 0.5);
-            color: var(--text-secondary);
-            cursor: not-allowed;
-        }
-
-        .send-button {
-            background: rgba(255, 157, 77, 0.15);
-            border: 1.5px solid var(--accent-orange);
-            color: var(--accent-orange);
-            padding: 10px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 12px;
-            font-family: inherit;
-            letter-spacing: 0.4px;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            flex: 0 0 auto;
-        }
-
-        .send-button:hover:not(:disabled) {
-            background: rgba(255, 157, 77, 0.25);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(255, 157, 77, 0.2);
-        }
-
-        .send-button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        .send-button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* ===== MODAL DE LOGIN ===== */
+        /* LOGIN MODAL */
         .modal {
             display: none;
             position: fixed;
@@ -327,7 +57,6 @@
             z-index: 2000;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(2px);
         }
 
         .modal.active {
@@ -336,24 +65,12 @@
 
         .modal-content {
             background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+            border: 1px solid #1a2847;
             border-radius: 12px;
             padding: 48px 40px;
             text-align: center;
             max-width: 420px;
             width: 100%;
-            animation: modalSlideIn 0.3s ease;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
         }
 
         .modal-title {
@@ -361,7 +78,6 @@
             font-weight: 700;
             margin-bottom: 8px;
             color: #fff;
-            letter-spacing: -0.5px;
         }
 
         .modal-subtitle {
@@ -369,7 +85,6 @@
             color: var(--text-secondary);
             margin-bottom: 32px;
             line-height: 1.6;
-            letter-spacing: 0.3px;
         }
 
         .modal-divider {
@@ -383,563 +98,552 @@
             margin-top: 20px;
         }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 600px) {
-            .container {
-                height: 100vh;
-                border-radius: 0;
-                max-width: 100%;
-            }
-
-            .message-bubble {
-                max-width: 85%;
-            }
-
-            .modal-content {
-                padding: 32px 24px;
-                margin: 20px;
-            }
-
-            .modal-title {
-                font-size: 24px;
-            }
-
-            .top-bar {
-                flex-wrap: wrap;
-                gap: 12px;
-            }
-
-            .phase-badge {
-                order: 3;
-                flex-basis: 100%;
-            }
+        /* APP INTERFACE */
+        .app-header {
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+            padding: 20px 24px;
+            border-bottom: 1px solid #1a2847;
+            text-align: center;
         }
 
-        /* ===== UTILIDADES ===== */
+        .app-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .app-user {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .app-phase {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--accent-orange);
+            margin-top: 8px;
+        }
+
+        /* CONTENT AREA */
+        .app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            gap: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* FLOATING TEXT */
+        .floating-text {
+            background: rgba(26, 40, 71, 0.8);
+            border: 1px solid rgba(255, 157, 77, 0.2);
+            border-left: 3px solid var(--accent-orange);
+            border-radius: 8px;
+            padding: 16px 20px;
+            max-width: 85%;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            animation: fadeInOut 8s ease-in-out forwards;
+            text-align: center;
+            word-wrap: break-word;
+            position: absolute;
+            top: 20px;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(10px); }
+        }
+
+        /* MIC BUTTON */
+        .mic-button {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 157, 77, 0.15);
+            border: 2px solid var(--accent-orange);
+            color: var(--accent-orange);
+            font-size: 48px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-button:hover:not(:disabled) {
+            background: rgba(255, 157, 77, 0.25);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 157, 77, 0.3);
+        }
+
+        .mic-button.recording {
+            background: rgba(255, 107, 107, 0.25);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+            animation: pulse-record 1s infinite;
+        }
+
+        @keyframes pulse-record {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 107, 107, 0.6); }
+        }
+
+        .mic-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* STATUS */
+        .status-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            min-height: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-text.active {
+            color: var(--accent-orange);
+            font-weight: 600;
+        }
+
+        /* TYPING INDICATOR */
+        .typing-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-orange);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-8px); }
+        }
+
         .hidden {
             display: none !important;
         }
 
-        .fade-in {
-            animation: fadeIn 0.3s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+        @media (max-width: 600px) {
+            .container { height: 100vh; border-radius: 0; }
+            .mic-button { width: 80px; height: 80px; font-size: 40px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== MODAL DE AUTENTICACIÓN ===== -->
+    <!-- LOGIN MODAL -->
     <div class="modal active" id="loginModal">
         <div class="modal-content">
             <div class="modal-title">FLAVELL</div>
-            <div class="modal-subtitle">
-                Evaluación Metacognitiva<br>
-                <span style="font-size: 12px;">Powered by Anthropic</span>
-            </div>
+            <div class="modal-subtitle">Evaluación Metacognitiva por Voz<br><span style="font-size: 11px;">Powered by OpenAI</span></div>
             <div class="modal-divider"></div>
             <div id="google-signin-button"></div>
         </div>
     </div>
 
-    <!-- ===== APLICACIÓN PRINCIPAL ===== -->
+    <!-- APP -->
     <div class="container hidden" id="appContainer">
-        <!-- Barra superior -->
-        <div class="top-bar">
-            <div class="top-bar-left">
-                <div class="app-title">FLAVELL</div>
-                <div class="app-subtitle" id="userGreeting">Hola</div>
-            </div>
-            <div class="phase-badge" id="phaseBadge">Fase 1</div>
+        <div class="app-header">
+            <div class="app-title">FLAVELL</div>
+            <div class="app-user" id="userGreeting">Hola</div>
+            <div class="app-phase" id="phaseIndicator">Fase 1: Planificación</div>
         </div>
 
-        <!-- Área de conversación -->
-        <div class="conversation-container" id="conversationContainer"></div>
-
-        <!-- Barra de estado -->
-        <div class="status-bar" id="statusBar">Conectando...</div>
-
-        <!-- Área de entrada -->
-        <div class="input-container">
-            <input
-                type="text"
-                class="input-field"
-                id="messageInput"
-                placeholder="Escribe tu respuesta..."
-                disabled
-            >
-            <button class="send-button" id="sendButton" onclick="sendMessage()" disabled>
-                Enviar
-            </button>
+        <div class="app-content" id="appContent">
+            <button class="mic-button" id="micButton" title="Presiona para hablar">🎤</button>
+            <div class="status-text" id="statusText">Presiona el micrófono para comenzar</div>
         </div>
     </div>
 
     <script>
-        // ===== CONFIGURACIÓN GLOBAL =====
+        // ===== CONFIG =====
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
-            ANTHROPIC_API: '/api/chat',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbyUJVuKeuKY7OhaJQyKU66E1hawloxg-rZRW58zoSwPhu3fQpncZY5OegjrBYOKp9dW/exec',
-            MAX_TURNS: 12,
-            PHASE_DETECTION_KEYWORDS: {
-                2: ['ya empecé', 'estoy', 'hice', 'leo', 'leyendo', 'haciendo', 'resolviendo'],
-                3: ['ya terminé', 'acabé', 'finalizé', 'aprendí', 'descubrí', 'si lo hiciera']
-            }
+            MAX_TURNS: 12
         };
 
-        // ===== ESTADO GLOBAL =====
+        // ===== STATE =====
         const state = {
-            // Autenticación
             userId: null,
             userName: null,
             userEmail: null,
-            
-            // Sesión
             sessionId: null,
-            sessionStart: null,
-            
-            // Conversación
             turno: 0,
             fase: 1,
             history: [],
             transcript: [],
-            isComplete: false,
-            isLoading: false,
-            
-            // Timestamps
-            lastMessageTime: Date.now()
+            isRecording: false,
+            isProcessing: false,
+            mediaRecorder: null,
+            audioChunks: [],
+            isComplete: false
         };
 
-        // ===== INICIALIZACIÓN GOOGLE AUTH =====
-        function initializeGoogleAuth() {
+        // ===== GOOGLE AUTH =====
+        function initGoogleAuth() {
             google.accounts.id.initialize({
                 client_id: CONFIG.GOOGLE_CLIENT_ID,
-                callback: handleGoogleLogin,
-                auto_select: false
+                callback: handleGoogleLogin
             });
 
             google.accounts.id.renderButton(
                 document.getElementById('google-signin-button'),
-                {
-                    theme: 'outline',
-                    size: 'large',
-                    text: 'signin_with',
-                    logo_alignment: 'center'
-                }
+                { theme: 'outline', size: 'large', text: 'signin_with' }
             );
         }
 
         function handleGoogleLogin(response) {
             try {
-                // Decodificar JWT
                 const base64Url = response.credential.split('.')[1];
                 const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
                 const jsonPayload = decodeURIComponent(
-                    atob(base64)
-                        .split('')
-                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                        .join('')
+                    atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
                 );
 
                 const userData = JSON.parse(jsonPayload);
-
-                // Guardar datos en estado
                 state.userId = userData.sub;
                 state.userName = userData.name;
                 state.userEmail = userData.email;
                 state.sessionId = `${state.userId}-${Date.now()}`;
-                state.sessionStart = new Date().toISOString();
 
-                // Actualizar UI
                 document.getElementById('loginModal').classList.remove('active');
                 document.getElementById('appContainer').classList.remove('hidden');
                 document.getElementById('userGreeting').textContent = `Hola, ${state.userName.split(' ')[0]}`;
 
-                // Iniciar entrevista
                 startInterview();
-
             } catch (error) {
-                logError('Error en autenticación Google', error);
-                updateStatus('Error en autenticación. Intenta de nuevo.', 'error');
+                console.error('Auth error:', error);
+                updateStatus('Error en autenticación', 'error');
             }
         }
 
-        // ===== FLUJO DE ENTREVISTA =====
+        // ===== INTERVIEW =====
         async function startInterview() {
             state.turno = 1;
             state.fase = 1;
-            
-            updateStatus('Conectando con Mira...', 'active');
-            updatePhaseBadge(1);
+            updateStatus('Iniciando sesión...', 'active');
 
             try {
-                const apertura = await generateMiraResponse('apertura', null);
-                addMessage('mira', apertura);
-                
+                const apertura = await callGPT('apertura', null);
+                showFloatingText(apertura);
+                await speakText(apertura);
+
                 logToSheet({
                     turno: state.turno,
                     fase: 1,
                     speaker: 'mira',
                     tipo: 'apertura',
-                    actividad: '',
                     texto: apertura,
                     latencia: 0,
                     indicadores: ''
                 });
 
-                enableInput(true);
-                updateStatus('Tu turno');
+                updateStatus('Presiona el micrófono para responder', 'active');
+                enableMic(true);
 
             } catch (error) {
-                logError('Error iniciando entrevista', error);
-                updateStatus('Error al conectar. Recarga la página.', 'error');
+                console.error('Start interview error:', error);
+                updateStatus('Error al iniciar. Recarga la página.', 'error');
             }
         }
 
-        async function sendMessage() {
-            const text = document.getElementById('messageInput').value.trim();
-            
-            if (!text || state.isLoading || state.isComplete) {
-                return;
-            }
-
-            // Limpiar input
-            document.getElementById('messageInput').value = '';
-            enableInput(false);
-
-            state.turno++;
-            const responseTime = Date.now();
-
-            // Agregar mensaje del estudiante
-            addMessage('student', text);
-
-            // Detectar nueva fase
-            const newPhase = detectPhase(text);
-            if (newPhase !== state.fase) {
-                state.fase = newPhase;
-                updatePhaseBadge(newPhase);
-            }
-
-            // Registrar respuesta estudiante
-            logToSheet({
-                turno: state.turno - 0.5,
-                fase: state.fase,
-                speaker: 'student',
-                tipo: 'respuesta',
-                actividad: '',
-                texto: text,
-                latencia: (Date.now() - state.lastMessageTime) / 1000,
-                indicadores: ''
-            });
-
-            // Generar respuesta de Mira
-            showTyping();
-            updateStatus('Mira está pensando...', 'active');
-
+        // ===== MIC RECORDING =====
+        async function startRecording() {
             try {
-                const response = await generateMiraResponse(state.fase, text);
-                hideTyping();
-                
-                addMessage('mira', response);
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                state.mediaRecorder = new MediaRecorder(stream);
+                state.audioChunks = [];
 
-                const latency = (Date.now() - responseTime) / 1000;
+                state.mediaRecorder.ondataavailable = (event) => {
+                    state.audioChunks.push(event.data);
+                };
 
-                // Registrar respuesta Mira
-                logToSheet({
-                    turno: state.turno,
-                    fase: state.fase,
-                    speaker: 'mira',
-                    tipo: 'respuesta',
-                    actividad: '',
-                    texto: response,
-                    latencia: latency,
-                    indicadores: ''
-                });
+                state.mediaRecorder.onstop = async () => {
+                    await processAudio();
+                };
 
-                // Verificar condiciones de cierre
-                if (shouldClose(response, state.turno)) {
-                    state.isComplete = true;
-                    enableInput(false);
-                    updateStatus('Sesión completada. ¡Muchas gracias!', 'active');
-                    
-                    // Log final de sesión
-                    logToSheet({
-                        turno: state.turno + 1,
-                        fase: state.fase,
-                        speaker: 'system',
-                        tipo: 'session-end',
-                        actividad: '',
-                        texto: `Sesión completada. Turnos totales: ${state.turno}`,
-                        latencia: 0,
-                        indicadores: 'sesión_completada'
-                    });
-                } else {
-                    enableInput(true);
-                    updateStatus('Tu turno');
-                    state.lastMessageTime = Date.now();
-                }
+                state.mediaRecorder.start();
+                state.isRecording = true;
+
+                document.getElementById('micButton').classList.add('recording');
+                updateStatus('Escuchando...', 'active');
 
             } catch (error) {
-                hideTyping();
-                logError('Error generando respuesta', error);
-                updateStatus('Error. Intenta de nuevo.', 'error');
-                enableInput(true);
+                console.error('Mic error:', error);
+                updateStatus('Error al acceder al micrófono', 'error');
             }
         }
 
-        // ===== GENERACIÓN DE RESPUESTAS CON CLAUDE =====
-        async function generateMiraResponse(phase, studentText) {
-            state.isLoading = true;
+        function stopRecording() {
+            if (state.mediaRecorder && state.isRecording) {
+                state.mediaRecorder.stop();
+                state.isRecording = false;
+                document.getElementById('micButton').classList.remove('recording');
+                updateStatus('Procesando audio...', 'active');
+            }
+        }
 
+        async function processAudio() {
+            try {
+                const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
+                updateStatus('Transcribiendo...', 'active');
+
+                // Convertir a base64
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const audioBase64 = reader.result.split(',')[1];
+
+                    // Enviar a Whisper via Vercel
+                    const transcriptResponse = await fetch('/api/whisper', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: audioBase64 })
+                    });
+
+                    const transcriptData = await transcriptResponse.json();
+                    const userText = transcriptData.text;
+
+                    if (!userText || userText.trim().length === 0) {
+                        updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
+                        enableMic(true);
+                        return;
+                    }
+
+                    showFloatingText(userText);
+
+                    logToSheet({
+                        turno: state.turno + 0.5,
+                        fase: state.fase,
+                        speaker: 'student',
+                        tipo: 'respuesta',
+                        texto: userText,
+                        latencia: 0,
+                        indicadores: ''
+                    });
+
+                    // Detectar fase
+                    const newPhase = detectPhase(userText);
+                    if (newPhase !== state.fase) {
+                        state.fase = newPhase;
+                        updatePhase(newPhase);
+                    }
+
+                    state.turno++;
+                    updateStatus('Reflexionando...', 'active');
+                    showTyping();
+
+                    // Llamar a GPT via Vercel
+                    const response = await callGPT(state.fase, userText);
+                    hideTyping();
+
+                    showFloatingText(response);
+                    await speakText(response);
+
+                    logToSheet({
+                        turno: state.turno,
+                        fase: state.fase,
+                        speaker: 'mira',
+                        tipo: 'respuesta',
+                        texto: response,
+                        latencia: 0,
+                        indicadores: ''
+                    });
+
+                    if (state.turno >= CONFIG.MAX_TURNS) {
+                        state.isComplete = true;
+                        updateStatus('Sesión completada. ¡Gracias!', 'active');
+                        enableMic(false);
+                    } else {
+                        updateStatus('Presiona el micrófono para continuar', 'active');
+                        enableMic(true);
+                    }
+                };
+
+                reader.readAsDataURL(audioBlob);
+
+            } catch (error) {
+                console.error('Audio processing error:', error);
+                hideTyping();
+                updateStatus('Error procesando audio. Intenta de nuevo.', 'error');
+                enableMic(true);
+            }
+        }
+
+        // ===== GPT CALL =====
+        async function callGPT(phase, userText) {
             try {
                 const systemPrompt = buildSystemPrompt(phase);
-                const userPrompt = buildUserPrompt(phase, studentText);
+                const userPrompt = buildUserPrompt(phase, userText);
 
-                const response = await fetch(CONFIG.ANTHROPIC_API, {
+                const response = await fetch('/api/gpt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        system_instruction: { parts: [{ text: systemPrompt }] },
-                        contents: state.history.length > 0 
-                            ? state.history
-                            : [{ role: 'user', parts: [{ text: userPrompt }] }],
-                        generationConfig: {
-                            temperature: 0.85,
-                            maxOutputTokens: 250
-                        }
+                        systemPrompt,
+                        userMessage: userPrompt
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
-                }
-
                 const data = await response.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Error al generar respuesta';
 
-                // Actualizar historial
-                if (state.history.length === 0) {
-                    state.history.push(
-                        { role: 'user', parts: [{ text: userPrompt }] },
-                        { role: 'model', parts: [{ text }] }
-                    );
-                } else {
-                    state.history.push(
-                        { role: 'user', parts: [{ text: userPrompt }] },
-                        { role: 'model', parts: [{ text }] }
-                    );
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error en GPT');
                 }
 
-                // Limpiar respuesta
-                const clean = text.replace(/\*/g, '').trim();
-                return clean;
+                return data.text;
 
             } catch (error) {
+                console.error('GPT error:', error);
                 throw error;
-            } finally {
-                state.isLoading = false;
             }
         }
 
-        // ===== PROMPTS PARA CLAUDE =====
+        // ===== TEXT-TO-SPEECH =====
+        async function speakText(text) {
+            try {
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error en TTS');
+                }
+
+                const audioUrl = `data:audio/mp3;base64,${data.audio}`;
+                const audio = new Audio(audioUrl);
+
+                return new Promise((resolve) => {
+                    audio.onended = resolve;
+                    audio.play().catch(e => {
+                        console.error('Audio play error:', e);
+                        resolve();
+                    });
+                });
+
+            } catch (error) {
+                console.error('TTS error:', error);
+            }
+        }
+
+        // ===== PROMPTS =====
         function buildSystemPrompt(phase) {
-            const basePrompt = `Eres Mira, un evaluador metacognitivo experto. Tu rol es conducir una entrevista socrática para evaluar habilidades metacognitivas.
+            const base = `Eres Mira, evaluador metacognitivo experto. Conducir entrevista socrática.
+REGLAS: Responde en español, máximo 2-3 oraciones, SIN asteriscos, conversacional.`;
 
-REGLAS CRÍTICAS:
-- Responde SIEMPRE en español
-- Una sola pregunta o actividad por turno
-- Máximo 2-3 oraciones, sé conciso
-- NO uses asteriscos, markdown ni formatos especiales
-- Sé conversacional, empático, no académico
-- Adapta según la fase del estudiante`;
-
-            const phaseGuides = {
-                1: `FASE 1 — PLANIFICACIÓN
-El estudiante está en la etapa inicial. Su respuesta sugiere que no ha empezado o está planificando.
-- Pregunta sobre su comprensión de la tarea
-- Indaga qué estrategias planea usar
-- Averigua qué conoce ya del tema`,
-                
-                2: `FASE 2 — EJECUCIÓN
-El estudiante está en medio del proceso. Ha mencionado acciones concretas.
-- Pregunta qué le cuesta trabajo
-- Indaga si está chequeando su progreso
-- Detecta bloqueos o dificultades`,
-                
-                3: `FASE 3 — AUTORREFLEXIÓN
-El estudiante ha terminado o puede evaluar su proceso completo.
-- Pregunta qué aprendió
-- Indaga qué haría diferente
-- Busca síntesis y transferencia`
+            const guides = {
+                1: 'FASE 1 - PLANIFICACIÓN: Pregunta sobre comprensión de tarea, estrategias, conocimiento previo.',
+                2: 'FASE 2 - EJECUCIÓN: Pregunta qué cuesta, si chequea progreso, bloqueos.',
+                3: 'FASE 3 - REFLEXIÓN: Pregunta qué aprendió, qué haría diferente, síntesis.'
             };
 
-            return basePrompt + '\n\n' + phaseGuides[phase];
+            return base + '\n' + guides[phase];
         }
 
-        function buildUserPrompt(phase, studentText) {
-            if (!studentText) {
-                return 'Por favor, comienza la entrevista metacognitiva. Presenta la apertura: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita?"';
+        function buildUserPrompt(phase, userText) {
+            if (!userText) {
+                return 'Comienza con: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita?"';
             }
-
-            return `Última respuesta del estudiante: "${studentText}"
-
-Basándote en su respuesta, formula una sola pregunta o actividad que:
-1. Sea apropiada para la FASE ${phase}
-2. Profundice en su proceso de aprendizaje
-3. Sea natural y conversacional`;
+            return `Respuesta estudiante: "${userText}"\n\nFormula una sola pregunta apropiada para FASE ${phase}.`;
         }
 
-        // ===== DETECCIÓN DE FASES =====
+        // ===== PHASE DETECTION =====
         function detectPhase(text) {
             const lower = text.toLowerCase();
-
-            // Detectar FASE 3 (Reflexión)
-            if (CONFIG.PHASE_DETECTION_KEYWORDS[3].some(kw => lower.includes(kw))) {
-                return 3;
-            }
-
-            // Detectar FASE 2 (Ejecución)
-            if (CONFIG.PHASE_DETECTION_KEYWORDS[2].some(kw => lower.includes(kw))) {
-                return 2;
-            }
-
-            // Default: FASE 1
+            if (/ya terminé|acabé|finalizé|aprendí|si lo hiciera/.test(lower)) return 3;
+            if (/ya empecé|estoy|hice|leyendo|haciendo|resolviendo/.test(lower)) return 2;
             return 1;
         }
 
-        // ===== LÓGICA DE CIERRE =====
-        function shouldClose(response, turnoActual) {
-            // Criterios de cierre
-            const hasCompletion = response.toLowerCase().includes('muchas gracias') || 
-                                  response.toLowerCase().includes('hasta la próxima');
-            const maxTurnsReached = turnoActual >= CONFIG.MAX_TURNS;
-
-            return hasCompletion || maxTurnsReached;
-        }
-
-        // ===== LOGGING A GOOGLE SHEETS =====
-        async function logToSheet(logData) {
+        // ===== LOGGING =====
+        async function logToSheet(data) {
             try {
-                const payload = {
-                    sessionId: state.sessionId,
-                    userId: state.userId,
-                    userEmail: state.userEmail,
-                    userName: state.userName,
-                    turno: logData.turno,
-                    fase: logData.fase,
-                    speaker: logData.speaker,
-                    tipo: logData.tipo,
-                    actividad: logData.actividad,
-                    texto: (logData.texto || '').substring(0, 500),
-                    latencia: logData.latencia,
-                    indicadores: logData.indicadores
-                };
-
-                const response = await fetch(CONFIG.SHEETS_WEBHOOK, {
+                await fetch(CONFIG.SHEETS_WEBHOOK, {
                     method: 'POST',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        sessionId: state.sessionId,
+                        userId: state.userId,
+                        userEmail: state.userEmail,
+                        userName: state.userName,
+                        ...data
+                    })
                 });
-
-                if (response.ok) {
-                    console.log('[FLAVELL] Log registrado correctamente');
-                } else {
-                    console.warn('[FLAVELL] Error en logging:', response.status);
-                }
-
             } catch (error) {
-                console.error('[FLAVELL] Error logging a Sheets:', error);
+                console.error('Logging error:', error);
             }
         }
 
-        // ===== UTILIDADES UI =====
-        function addMessage(role, text) {
-            const container = document.getElementById('conversationContainer');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role === 'mira' ? 'mira-msg' : 'student-msg'}`;
-            messageDiv.innerHTML = `<div class="message-bubble">${escapeHtml(text)}</div>`;
-            container.appendChild(messageDiv);
-            container.scrollTop = container.scrollHeight;
-
-            // Guardar en transcript
-            state.transcript.push({
-                role,
-                text,
-                timestamp: new Date().toISOString(),
-                fase: state.fase
-            });
+        // ===== UI =====
+        function showFloatingText(text) {
+            const div = document.createElement('div');
+            div.className = 'floating-text';
+            div.textContent = text;
+            document.getElementById('appContent').appendChild(div);
+            setTimeout(() => div.remove(), 8000);
         }
 
         function showTyping() {
-            const container = document.getElementById('conversationContainer');
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'typingIndicator';
-            typingDiv.className = 'message mira-msg';
-            typingDiv.innerHTML = `
-                <div class="typing-container">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-            container.appendChild(typingDiv);
-            container.scrollTop = container.scrollHeight;
+            const div = document.createElement('div');
+            div.id = 'typingIndicator';
+            div.className = 'typing-dots';
+            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            document.getElementById('appContent').appendChild(div);
         }
 
         function hideTyping() {
             document.getElementById('typingIndicator')?.remove();
         }
 
-        function updatePhaseBadge(phase) {
-            const labels = {
-                1: 'Planificación',
-                2: 'Ejecución',
-                3: 'Reflexión'
-            };
-            document.getElementById('phaseBadge').textContent = labels[phase];
-        }
-
         function updateStatus(text, type = '') {
-            const statusBar = document.getElementById('statusBar');
-            statusBar.textContent = text;
-            statusBar.classList.remove('active', 'error');
-            if (type) statusBar.classList.add(type);
+            const el = document.getElementById('statusText');
+            el.textContent = text;
+            el.className = `status-text ${type === 'active' ? 'active' : ''}`;
         }
 
-        function enableInput(enabled) {
-            document.getElementById('messageInput').disabled = !enabled;
-            document.getElementById('sendButton').disabled = !enabled;
+        function updatePhase(phase) {
+            const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
+            document.getElementById('phaseIndicator').textContent = `Fase ${phase}: ${labels[phase]}`;
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function logError(context, error) {
-            console.error(`[FLAVELL] ${context}:`, error);
-        }
-
-        // ===== EVENT LISTENERS =====
-        document.getElementById('messageInput').addEventListener('keypress', e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+        function enableMic(enabled) {
+            const btn = document.getElementById('micButton');
+            btn.disabled = !enabled;
+            if (enabled) {
+                btn.onmousedown = startRecording;
+                btn.onmouseup = stopRecording;
+                btn.ontouchstart = startRecording;
+                btn.ontouchend = stopRecording;
             }
-        });
+        }
 
-        // ===== INICIALIZACIÓN =====
-        window.addEventListener('DOMContentLoaded', () => {
-            initializeGoogleAuth();
-            console.log('[FLAVELL] Aplicación inicializada');
-        });
+        // ===== INIT =====
+        window.addEventListener('DOMContentLoaded', initGoogleAuth);
+        document.getElementById('appContainer')?.classList.add('hidden');
     </script>
 
 </body>
