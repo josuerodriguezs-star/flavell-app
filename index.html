@@ -277,11 +277,24 @@
     </div>
 
     <script>
+        /* ========================================
+           FLAVELL 3.0 — Voice-Only Interface
+           ========================================
+           SEGURIDAD: No contiene API keys. 
+           Los endpoints usan Vercel backend seguro.
+        ======================================== */
+
         // ===== CONFIG =====
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbyUJVuKeuKY7OhaJQyKU66E1hawloxg-rZRW58zoSwPhu3fQpncZY5OegjrBYOKp9dW/exec',
-            MAX_TURNS: 12
+            MAX_TURNS: 12,
+            // API Endpoints — Vercel backend (seguro, sin API keys expuestas)
+            API: {
+                WHISPER: '/api/whisper',    // Transcription (speech → text)
+                GPT: '/api/gpt',            // Reflection (text → text)
+                TTS: '/api/tts'             // Speech synthesis (text → audio)
+            }
         };
 
         // ===== STATE =====
@@ -410,13 +423,13 @@
                 const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
                 updateStatus('Transcribiendo...', 'active');
 
-                // Convertir a base64
+                // Convertir a base64 para enviar al backend
                 const reader = new FileReader();
                 reader.onload = async () => {
                     const audioBase64 = reader.result.split(',')[1];
 
-                    // Enviar a Whisper via Vercel
-                    const transcriptResponse = await fetch('/api/whisper', {
+                    // ENDPOINT: /api/whisper (Vercel backend)
+                    const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ audio: audioBase64 })
@@ -454,7 +467,7 @@
                     updateStatus('Reflexionando...', 'active');
                     showTyping();
 
-                    // Llamar a GPT via Vercel
+                    // ENDPOINT: /api/gpt (Vercel backend)
                     const response = await callGPT(state.fase, userText);
                     hideTyping();
 
@@ -497,7 +510,8 @@
                 const systemPrompt = buildSystemPrompt(phase);
                 const userPrompt = buildUserPrompt(phase, userText);
 
-                const response = await fetch('/api/gpt', {
+                // ENDPOINT: /api/gpt (Vercel backend)
+                const response = await fetch(CONFIG.API.GPT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -523,7 +537,8 @@
         // ===== TEXT-TO-SPEECH =====
         async function speakText(text) {
             try {
-                const response = await fetch('/api/tts', {
+                // ENDPOINT: /api/tts (Vercel backend)
+                const response = await fetch(CONFIG.API.TTS, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
