@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLAVELL — Evaluación Metacognitiva</title>
+    <!-- Internamente: FLAVELL. Públicamente: VIGIL -->
+    <title>VIGIL — Evaluación Metacognitiva</title>
     <script src="https://accounts.google.com/gsi/client"></script>
     <style>
         * {
@@ -195,14 +196,8 @@
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .student-text {
@@ -218,8 +213,8 @@
         }
 
         @keyframes fadeOut {
-            0% { opacity: 1; }
-            85% { opacity: 1; }
+            0%   { opacity: 1; }
+            85%  { opacity: 1; }
             100% { opacity: 0; }
         }
 
@@ -243,7 +238,7 @@
 
         @keyframes typingBounce {
             0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-10px); }
+            30%            { opacity: 1;   transform: translateY(-10px); }
         }
 
         .control-area {
@@ -272,91 +267,36 @@
             font-weight: bold;
         }
 
-        .mic-button.available {
-            background: var(--status-green);
-            cursor: pointer;
-        }
-
-        .mic-button.available:hover {
-            transform: scale(1.1);
-        }
-
-        .mic-button.recording {
-            background: var(--status-red);
-            animation: pulse-record 0.8s infinite;
-            cursor: default;
-        }
-
-        .mic-button.speaking {
-            background: var(--status-gray);
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        .mic-button.processing {
-            background: var(--status-gray);
-            cursor: not-allowed;
-        }
-
-        .mic-button.closed {
-            background: var(--status-red);
-            cursor: not-allowed;
-            opacity: 0.4;
-        }
+        .mic-button.available          { background: var(--status-green); cursor: pointer; }
+        .mic-button.available:hover    { transform: scale(1.1); }
+        .mic-button.recording          { background: var(--status-red); animation: pulse-record 0.8s infinite; cursor: default; }
+        .mic-button.speaking           { background: var(--status-gray); cursor: not-allowed; opacity: 0.6; }
+        .mic-button.processing         { background: var(--status-gray); cursor: not-allowed; }
+        .mic-button.closed             { background: var(--status-red); cursor: not-allowed; opacity: 0.4; }
 
         @keyframes pulse-record {
-            0%, 100% { 
-                box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
-                transform: scale(1);
-            }
-            50% { 
-                box-shadow: 0 0 60px rgba(239, 68, 68, 0.9);
-                transform: scale(1.03);
-            }
+            0%, 100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); transform: scale(1); }
+            50%       { box-shadow: 0 0 60px rgba(239, 68, 68, 0.9); transform: scale(1.03); }
         }
 
-        .status {
-            font-size: 14px;
-            color: var(--text-gray);
-            text-align: center;
-            min-height: 20px;
-            letter-spacing: 0.5px;
-            font-weight: 400;
-        }
+        .status { font-size: 14px; color: var(--text-gray); text-align: center; min-height: 20px; letter-spacing: 0.5px; font-weight: 400; }
+        .status.active  { color: var(--accent-orange); font-weight: 600; }
+        .status.warning { color: var(--status-red); font-weight: 700; }
+        .status.success { color: var(--status-green); font-weight: 600; }
 
-        .status.active {
-            color: var(--accent-orange);
-            font-weight: 600;
-        }
-
-        .status.warning {
-            color: var(--status-red);
-            font-weight: 700;
-        }
-
-        .status.success {
-            color: var(--status-green);
-            font-weight: 600;
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        .hidden { display: none !important; }
 
         @media (max-width: 600px) {
-            .mic-button { 
-                width: 120px; 
-                height: 120px; 
-                font-size: 56px;
-            }
+            .mic-button { width: 120px; height: 120px; font-size: 56px; }
         }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN MODAL — visible como VIGIL -->
     <div class="modal active" id="loginModal">
         <div class="modal-content">
-            <div class="modal-title">FLAVELL</div>
+            <div class="modal-title">VIGIL</div>
             <div class="modal-subtitle">Evaluación Metacognitiva</div>
             <div class="modal-agent">Anáhuac Online</div>
             <div id="recoveryMessage" class="modal-recovery hidden"></div>
@@ -365,9 +305,10 @@
         </div>
     </div>
 
+    <!-- APP — visible como VIGIL -->
     <div class="container hidden" id="appContainer">
         <div class="header">
-            <div class="header-title">FLAVELL</div>
+            <div class="header-title">VIGIL</div>
             <div class="header-agent">Anáhuac Online</div>
             <div class="header-user" id="userGreeting">Hola</div>
             <div class="header-phase" id="phaseIndicator">Conectando...</div>
@@ -383,11 +324,19 @@
     </div>
 
     <script>
-        console.log('╔════════════════════════════════════════╗');
-        console.log('║  FLAVELL MIRA v12 - FINAL COMPLETE     ║');
-        console.log('║  Anáhuac Online                        ║');
-        console.log('╚════════════════════════════════════════╝');
-        
+        // ╔══════════════════════════════════════════════╗
+        // ║  VIGIL by FLAVELL — Evaluación Metacognitiva ║
+        // ║  Agente: Vigil  |  Motor: Flavell            ║
+        // ║  Anáhuac Online                              ║
+        // ╚══════════════════════════════════════════════╝
+
+        console.log('╔══════════════════════════════════════════════╗');
+        console.log('║  VIGIL by FLAVELL v13 — Anáhuac Online       ║');
+        console.log('╚══════════════════════════════════════════════╝');
+
+        // =====================================================
+        // CONFIG (interno: FLAVELL)
+        // =====================================================
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx6P0s2eAtYdFGBuGbDJZyzr4GTHq2k-6a-FkdbRgzBsffjQ1hx4pYfCmLNh7a7OBhC/exec?token=flavell-mira-token-2024',
@@ -395,6 +344,8 @@
             MIN_RESPONSES_TO_CLOSE: 4,
             MIN_INDICATORS_TO_CLOSE: 2,
             TTS_TIMEOUT: 8000,
+            // Umbral mínimo de palabras para considerar una respuesta elaborada
+            MIN_WORDS_ELABORATED: 10,
             API: {
                 WHISPER: '/api/whisper',
                 GPT: '/api/gpt',
@@ -402,6 +353,9 @@
             }
         };
 
+        // =====================================================
+        // ESTADO DE SESIÓN
+        // =====================================================
         const state = {
             userId: null,
             userName: null,
@@ -419,51 +373,243 @@
             indicators: [],
             lastActivityTime: null,
             lastTurnoTime: null,
-            metrics: {}
+            metrics: {},
+            // Registro de cuántas veces se ha replanteado cada pregunta
+            rephraseCount: {},
+            // Índice de la última pregunta hecha en cada fase (para control de turno)
+            lastQuestionIndex: {}
         };
 
-        // ===== ELIA'S MIRA LOGIC =====
-        const MIRA = {
-            apertura: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita? No importa si es una tarea, algo que leíste, algo que no te quedó claro, o algo que ya terminaste. Lo que sea.",
-            
+        // =====================================================
+        // LÓGICA DE VIGIL (antes: MIRA)
+        // =====================================================
+        const VIGIL = {
+
+            // Apertura pública: Vigil
+            apertura: "Hola, soy Vigil. Cuéntame, ¿en qué estás trabajando en este momento? No importa si es una tarea, algo que leíste, algún proceso de tu trabajo o algo respecto a tus materias. Lo que quieras que analicemos juntos.",
+
+            // Preguntas por fase — orden correcto según turnos
             preguntas: {
                 1: [
-                    "¿Qué entendiste que te estaban pidiendo hacer?",
-                    "¿Qué sabes ya sobre el tema antes de empezar?",
-                    "¿Por dónde crees que vas a arrancar?"
+                    "¿Qué entendiste que te estaban pidiendo hacer y cuál fue el primer paso concreto que tomaste?",
+                    "¿Qué sabías ya sobre el tema antes de arrancar y cómo lo aplicaste?",
+                    "¿Por dónde decidiste empezar y por qué escogiste ese punto de entrada?"
                 ],
                 2: [
-                    "¿Qué parte te está costando más trabajo?",
-                    "¿En algún momento paraste a checar si ibas bien?",
-                    "¿Hubo algo que no salió como esperabas?"
+                    "¿Qué parte del proceso te cuesta o te costó más resolver?",
+                    "¿Qué cambiarías o aún puedes cambiar de tu proceso?",
+                    "¿Hubo algo que no te salió como esperabas?"
                 ],
                 3: [
-                    "¿Qué aprendiste hoy, con tus propias palabras?",
-                    "¿Te fue mejor o peor de lo que esperabas? ¿A qué le atribuyes eso?",
-                    "¿Qué parte sí entendiste bien y cuál se quedó en el aire?"
+                    "¿Qué aprendiste hoy con tus propias palabras, siendo específico en lo que hiciste?",
+                    "¿Te fue mejor o peor de lo que esperabas? ¿A qué le atribuyes eso en concreto?",
+                    "¿Qué parte del proceso sí dominaste bien y cuál se quedó sin resolver?"
+                ]
+            },
+
+            // Replanteamientos cuando la respuesta es breve o vaga
+            // Se usan cuando classifyElaboration() devuelve 'breve'
+            replanteamientos: {
+                1: [
+                    "Cuéntame más sobre cómo lo hiciste concretamente, paso a paso.",
+                    "¿Puedes describir exactamente qué hiciste primero y qué vino después?",
+                    "Dame un ejemplo específico de lo que hiciste, no la idea general."
+                ],
+                2: [
+                    "¿Puedes describir ese momento con más detalle? ¿Qué pasó exactamente?",
+                    "¿Cómo lo intentaste resolver? Cuéntame el procedimiento real.",
+                    "¿Qué acción tomaste cuando te encontraste con eso?"
+                ],
+                3: [
+                    "¿Puedes ser más específico? ¿Qué hiciste exactamente en ese punto?",
+                    "¿Cómo cambiaría tu forma de hacerlo la próxima vez, en pasos concretos?",
+                    "¿Qué resultado obtuviste y qué lo causó, según tú?"
                 ]
             },
 
             cierres: {
-                exitoso: "Creo que llegaste a algo importante hoy. Guárdalo en algún lugar, porque ese tipo de cosas se olvidan rápido. Hasta la próxima.",
+                exitoso:    "Creo que llegaste a algo importante hoy. Guárdalo en algún lugar, porque ese tipo de cosas se olvidan rápido. Hasta la próxima.",
                 incompleto: "Quedamos a medias, pero el proceso ya empezó. Sigue pensando en eso cuando puedas.",
-                frustrado: "Está bien si hoy no salió. Hay sesiones así. Vuelve cuando tengas más energía para esto."
+                frustrado:  "Está bien si hoy no salió. Hay sesiones así. Vuelve cuando tengas más energía para esto."
             }
         };
 
-        // ===== PERSISTENCIA =====
+        // =====================================================
+        // ANÁLISIS ESTADÍSTICO Y MATEMÁTICO DE MÉTRICAS
+        // (Procesamiento del lado del frontend — equivalente al "back" de la lógica Elia)
+        // =====================================================
+        const MetricEngine = {
+
+            /**
+             * Complejidad de respuesta (0–100)
+             * Combina longitud, densidad léxica y especificidad procedimental.
+             */
+            computeComplexityScore(text) {
+                const words = text.trim().split(/\s+/);
+                const wordCount = words.length;
+                if (wordCount === 0) return 0;
+
+                // 1. Score por longitud normalizado (logístico, satura en ~80 palabras)
+                const lengthScore = Math.min(100, (wordCount / 80) * 100);
+
+                // 2. Densidad léxica: palabras únicas / total (riqueza de vocabulario)
+                const unique = new Set(words.map(w => w.toLowerCase().replace(/[^a-záéíóúüñ]/gi, ''))).size;
+                const lexicalDensity = (unique / wordCount) * 100;
+
+                // 3. Especificidad procedimental: presencia de verbos de acción concretos
+                const proceduralVerbs = /hice|hizo|realicé|apliqué|usé|probé|intenté|calculé|resolví|analicé|construí|diseñé|ejecuté|desarrollé|escribí|leí|estudié|revisé|corregí|planifiqué|organicé|decidí|elegí|cambié|ajusté|medí|comparé|identifiqué|encontré|descubrí/i;
+                const hasProceduralVerbs = proceduralVerbs.test(text) ? 30 : 0;
+
+                // Promedio ponderado
+                const score = (lengthScore * 0.4) + (lexicalDensity * 0.3) + hasProceduralVerbs;
+                return Math.round(Math.min(100, score));
+            },
+
+            /**
+             * Score de abstracción lógica (0–100)
+             * Mide si el estudiante razona sobre su proceso, no solo lo describe.
+             */
+            computeAbstractionScore(text) {
+                const lower = text.toLowerCase();
+                let score = 0;
+
+                // Causalidad: conecta causas con efectos
+                if (/porque|por eso|por eso|debido a|esto causó|esto provocó|lo que hizo que|entonces/.test(lower)) score += 25;
+
+                // Condición: razonamiento hipotético o condicional
+                if (/si hubiera|si lo hago|si repito|la próxima vez|si cambiara|hubiera podido|debería haber/.test(lower)) score += 25;
+
+                // Metacognición explícita: habla de su propio proceso de pensar
+                if (/me di cuenta|noté que|entendí que|me equivoqué|cometí un error|lo que me faltó|lo que aprendí|reflexioné|analicé mi/.test(lower)) score += 25;
+
+                // Comparación con expectativa previa
+                if (/esperaba|pensé que|creía que|suponía|resultó que|al final|de lo que pensé/.test(lower)) score += 25;
+
+                return Math.min(100, score);
+            },
+
+            /**
+             * Score de autorregulación (0–100)
+             * Qué tan activamente el estudiante ajustó su proceso.
+             */
+            computeSelfRegulationScore(text) {
+                const lower = text.toLowerCase();
+                let score = 0;
+
+                // Monitoreo: checar avance
+                if (/revisé|checé|verifiqué|me aseguré|comprobé|confirmé|validé|supervisé/.test(lower)) score += 30;
+
+                // Ajuste de estrategia
+                if (/cambié|ajusté|modifiqué|adapté|decidí hacer diferente|opté por|en lugar de|en vez de/.test(lower)) score += 35;
+
+                // Gestión del error
+                if (/me equivoqué|corregí|volví a intentar|rehíce|replanteé|retrocedí|empecé de nuevo/.test(lower)) score += 35;
+
+                return Math.min(100, score);
+            },
+
+            /**
+             * Score de ubicación del proceso (0–100)
+             * El estudiante demuestra saber exactamente dónde estaba en su proceso.
+             */
+            computeProcessLocationScore(text) {
+                const lower = text.toLowerCase();
+                let score = 0;
+
+                // Secuenciación: usa conectores de orden
+                if (/primero|luego|después|al final|antes de|una vez que|tras|finalmente|en ese punto|en ese momento/.test(lower)) score += 30;
+
+                // Referencia a un paso específico
+                if (/en la parte de|en el punto|en ese paso|en esa etapa|ahí fue cuando|fue entonces|en ese momento específico/.test(lower)) score += 35;
+
+                // Mencionan producto concreto del proceso
+                if (/el resultado|el output|lo que produje|lo que entregué|el documento|el código|la fórmula|la respuesta|el cálculo|la tarea|el reporte/.test(lower)) score += 35;
+
+                return Math.min(100, score);
+            },
+
+            /**
+             * Evalúa el conjunto de respuestas de la sesión.
+             * Devuelve el perfil estadístico completo.
+             */
+            computeSessionProfile(metricsMap) {
+                const entries = Object.values(metricsMap);
+                if (entries.length === 0) return null;
+
+                const extract = key => entries.map(e => e[key] || 0);
+
+                const complexity    = extract('complexityScore');
+                const abstraction   = extract('abstractionScore');
+                const selfReg       = extract('selfRegulationScore');
+                const procLocation  = extract('processLocationScore');
+                const latencies     = extract('latencia');
+                const wordCounts    = extract('numPalabras');
+
+                return {
+                    // Promedios
+                    avgComplexity:       avg(complexity),
+                    avgAbstraction:      avg(abstraction),
+                    avgSelfRegulation:   avg(selfReg),
+                    avgProcessLocation:  avg(procLocation),
+                    avgLatencia:         avg(latencies),
+                    avgPalabras:         avg(wordCounts),
+
+                    // Tendencia: ¿mejora con el tiempo?
+                    complexityTrend:     linearTrend(complexity),
+                    abstractionTrend:    linearTrend(abstraction),
+
+                    // Dispersión (desviación estándar) — coherencia entre respuestas
+                    stdComplexity:       std(complexity),
+                    stdAbstraction:      std(abstraction),
+
+                    // Score compuesto de metacognición (ponderado)
+                    metacognitionIndex:  Math.round(
+                        avg(complexity)   * 0.20 +
+                        avg(abstraction)  * 0.35 +
+                        avg(selfReg)      * 0.25 +
+                        avg(procLocation) * 0.20
+                    )
+                };
+            }
+        };
+
+        // Utilidades estadísticas
+        function avg(arr)  { return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0; }
+        function std(arr)  {
+            if (arr.length < 2) return 0;
+            const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+            return Math.round(Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / arr.length));
+        }
+        function linearTrend(arr) {
+            // Pendiente de mínimos cuadrados: positiva = mejora, negativa = declive
+            if (arr.length < 2) return 0;
+            const n = arr.length;
+            const xs = arr.map((_, i) => i);
+            const sumX  = xs.reduce((a, b) => a + b, 0);
+            const sumY  = arr.reduce((a, b) => a + b, 0);
+            const sumXY = xs.reduce((s, x, i) => s + x * arr[i], 0);
+            const sumX2 = xs.reduce((s, x) => s + x * x, 0);
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            return Math.round(slope * 100) / 100;
+        }
+
+        // =====================================================
+        // PERSISTENCIA
+        // =====================================================
         function saveSessionState() {
             const sessionData = {
-                userId: state.userId,
-                userName: state.userName,
+                userId:    state.userId,
+                userName:  state.userName,
                 userEmail: state.userEmail,
                 sessionId: state.sessionId,
-                turno: state.turno,
-                fase: state.fase,
+                turno:     state.turno,
+                fase:      state.fase,
                 respuestas: state.respuestas,
                 indicators: state.indicators,
-                startTime: state.startTime,
-                metrics: state.metrics,
+                startTime:  state.startTime,
+                metrics:    state.metrics,
+                rephraseCount: state.rephraseCount,
+                lastQuestionIndex: state.lastQuestionIndex,
                 timestamp: Date.now()
             };
             localStorage.setItem(`flavell-session-${state.sessionId}`, JSON.stringify(sessionData));
@@ -471,97 +617,66 @@
         }
 
         function checkSessionRecovery(userId) {
-            console.log('🔍 Buscando sesiones incompletas para:', userId);
-            
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key.startsWith('flavell-session-')) {
+                if (key && key.startsWith('flavell-session-')) {
                     const data = JSON.parse(localStorage.getItem(key));
-                    
                     if (data.userId === userId && !data.sessionClosed && data.turno > 1) {
-                        const noExpiro = (Date.now() - data.timestamp) < 7200000;
-                        if (noExpiro) {
-                            console.log('✓ RECUPERABLE:', key);
-                            return data;
-                        }
+                        if ((Date.now() - data.timestamp) < 7200000) return data;
                     }
                 }
             }
-            
-            console.log('❌ No hay sesiones recuperables');
             return null;
         }
 
+        // =====================================================
+        // GOOGLE AUTH
+        // =====================================================
         function initGoogleAuth() {
-            console.log('🔐 Inicializando Google Auth...');
-            
             if (typeof google === 'undefined' || !google.accounts) {
-                console.warn('⏳ Google aún no carga, reintentando en 500ms...');
                 setTimeout(initGoogleAuth, 500);
                 return;
             }
-
             try {
                 google.accounts.id.initialize({
                     client_id: CONFIG.GOOGLE_CLIENT_ID,
                     callback: handleGoogleLogin
                 });
-                
-                console.log('✅ Google inicializado');
-                
-                const button = document.getElementById('google-signin-button');
-                if (!button) {
-                    console.error('❌ Elemento #google-signin-button no encontrado');
-                    return;
-                }
-                
-                google.accounts.id.renderButton(button, {
-                    theme: 'outline',
-                    size: 'large',
-                    text: 'signin_with'
-                });
-                
-                console.log('✅ Botón renderizado');
+                google.accounts.id.renderButton(
+                    document.getElementById('google-signin-button'),
+                    { theme: 'outline', size: 'large', text: 'signin_with' }
+                );
             } catch (error) {
-                console.error('❌ Error en Google Auth:', error);
+                console.error('❌ Error Google Auth:', error);
             }
         }
 
         function handleGoogleLogin(response) {
-            console.log('🔓 Usuario intentando login...');
             try {
-                const base64Url = response.credential.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(
+                const base64 = response.credential.split('.')[1]
+                    .replace(/-/g, '+').replace(/_/g, '/');
+                const userData = JSON.parse(decodeURIComponent(
                     atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-                );
-                const userData = JSON.parse(jsonPayload);
-                state.userId = userData.sub;
-                state.userName = userData.name;
+                ));
+                state.userId    = userData.sub;
+                state.userName  = userData.name;
                 state.userEmail = userData.email;
 
-                console.log('✅ Login exitoso');
-                console.log('   Usuario:', state.userName);
-                console.log('   Email:', state.userEmail);
-                console.log('   ID:', state.userId);
-
-                const recoveredSession = checkSessionRecovery(state.userId);
-                
-                if (recoveredSession && recoveredSession.turno > 1) {
-                    showRecoveryOption(recoveredSession);
+                const recovered = checkSessionRecovery(state.userId);
+                if (recovered && recovered.turno > 1) {
+                    showRecoveryOption(recovered);
                 } else {
                     startNewSession();
                 }
             } catch (error) {
-                console.error('❌ Error en login:', error);
+                console.error('❌ Login error:', error);
             }
         }
 
-        function showRecoveryOption(recoveredSession) {
+        function showRecoveryOption(recovered) {
             const msg = document.getElementById('recoveryMessage');
-            msg.textContent = `Encontramos una sesión anterior en Fase ${recoveredSession.fase} con ${recoveredSession.turno} turnos. ¿Deseas continuar?`;
+            msg.textContent = `Encontramos una sesión anterior en Fase ${recovered.fase} con ${recovered.turno} turnos. ¿Deseas continuar?`;
             msg.classList.remove('hidden');
-
             const buttons = document.getElementById('recoveryButtons');
             buttons.innerHTML = `
                 <button class="btn-continue" onclick="continueSession()">Continuar Sesión</button>
@@ -571,132 +686,148 @@
         }
 
         function continueSession() {
-            const recoveredSession = checkSessionRecovery(state.userId);
-            if (recoveredSession) {
-                state.sessionId = recoveredSession.sessionId;
-                state.turno = recoveredSession.turno;
-                state.fase = recoveredSession.fase;
-                state.respuestas = recoveredSession.respuestas;
-                state.indicators = recoveredSession.indicators;
-                state.startTime = recoveredSession.startTime;
-                state.metrics = recoveredSession.metrics;
-                state.lastActivityTime = Date.now();
-
-                document.getElementById('loginModal').classList.remove('active');
-                document.getElementById('appContainer').classList.remove('hidden');
-                document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
-
-                logToSheet({
-                    tipo: 'recuperacion',
-                    texto: `Sesión recuperada en Fase ${state.fase}, turno ${state.turno}`,
-                    estadoSesion: 'recuperada'
-                });
-
-                continueFromPhase();
-            }
+            const recovered = checkSessionRecovery(state.userId);
+            if (!recovered) return;
+            Object.assign(state, {
+                sessionId:         recovered.sessionId,
+                turno:             recovered.turno,
+                fase:              recovered.fase,
+                respuestas:        recovered.respuestas,
+                indicators:        recovered.indicators,
+                startTime:         recovered.startTime,
+                metrics:           recovered.metrics,
+                rephraseCount:     recovered.rephraseCount || {},
+                lastQuestionIndex: recovered.lastQuestionIndex || {},
+                lastActivityTime:  Date.now()
+            });
+            openApp();
+            logToSheet({ tipo: 'recuperacion', texto: `Sesión recuperada en Fase ${state.fase}, turno ${state.turno}`, estadoSesion: 'recuperada' });
+            continueFromPhase();
         }
 
         function startNewSession() {
-            state.sessionId = `${state.userId}-${Date.now()}`;
-            state.turno = 0;
-            state.fase = 1;
-            state.respuestas = [];
-            state.indicators = [];
-            state.startTime = Date.now();
-            state.metrics = {};
-            state.lastActivityTime = Date.now();
-
-            document.getElementById('loginModal').classList.remove('active');
-            document.getElementById('appContainer').classList.remove('hidden');
-            document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
-
+            Object.assign(state, {
+                sessionId:         `${state.userId}-${Date.now()}`,
+                turno:             0,
+                fase:              1,
+                respuestas:        [],
+                indicators:        [],
+                startTime:         Date.now(),
+                metrics:           {},
+                rephraseCount:     {},
+                lastQuestionIndex: {},
+                lastActivityTime:  Date.now()
+            });
+            openApp();
             startInterview();
         }
 
+        function openApp() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
+        }
+
+        // =====================================================
+        // FLUJO DE ENTREVISTA
+        // =====================================================
         async function startInterview() {
             state.turno = 1;
-            state.fase = 1;
+            state.fase  = 1;
             state.lastTurnoTime = Date.now();
             updateStatus('Iniciando...', 'active');
             updateProgress();
-            showMiraText(MIRA.apertura);
+            showMiraText(VIGIL.apertura);
             setMicState('speaking');
-            await speakText(MIRA.apertura);
+            await speakText(VIGIL.apertura);
             setMicState('available');
             updateStatus('Presiona para hablar', 'active');
 
             logToSheet({
-                turno: state.turno,
-                fase: state.fase,
-                speaker: 'mira',
-                tipo: 'apertura',
-                texto: MIRA.apertura,
-                latencia: 0,
-                elaboracion: 'N/A'
+                turno: state.turno, fase: state.fase,
+                speaker: 'vigil', tipo: 'apertura',
+                texto: VIGIL.apertura, latencia: 0, elaboracion: 'N/A'
             });
-
             saveSessionState();
         }
 
         async function continueFromPhase() {
             updateStatus('Sesión recuperada', 'success');
             updateProgress();
-            
             const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
-            showMiraText(`Retomamos donde nos quedamos. Estamos en Fase ${state.fase}: ${labels[state.fase]}. Adelante.`);
+            const msg = `Retomamos donde nos quedamos. Estamos en Fase ${state.fase}: ${labels[state.fase]}. Adelante.`;
+            showMiraText(msg);
             setMicState('speaking');
-            await speakText(`Retomamos donde nos quedamos. Estamos en Fase ${state.fase}. Adelante.`);
-            
+            await speakText(msg);
             state.turno++;
             await askNextQuestion();
         }
 
+        // =====================================================
+        // DETECCIÓN DE FASE
+        // =====================================================
         function detectPhase(text) {
             const lower = text.toLowerCase();
-            if (/terminé|acabé|finalizé|completé|aprendí|descubrí|entendí|me di cuenta|resultó|funcionó|no funcionó|conclusión|resultado|logré|conseguí|dominé|comprendí|asimilé|reflexiono|pensé|analice|evalúe|consideré|mejoraría|cambiaría|siguiente vez|próxima|error|equivocación|reto|desafío/.test(lower)) 
-                return 3;
-            if (/empecé|estoy|hice|haciendo|leyendo|escribiendo|resolviendo|calculando|analizando|buscando|investigando|encontré|revisando|checando|probando|intentando|aplicando|usando|ejecutando|realizando|desarrollando|construyendo|creando|practique|trabaje|intente|realice|desarrollo|construyo|cree/.test(lower)) 
-                return 2;
+            if (/terminé|acabé|finalizé|completé|aprendí|descubrí|entendí|me di cuenta|resultó|funcionó|no funcionó|conclusión|resultado|logré|conseguí|dominé|comprendí|asimilé|reflexiono|pensé|analice|evalúe|consideré|mejoraría|cambiaría|siguiente vez|próxima|error|equivocación|reto|desafío/.test(lower)) return 3;
+            if (/empecé|estoy|hice|haciendo|leyendo|escribiendo|resolviendo|calculando|analizando|buscando|investigando|encontré|revisando|checando|probando|intentando|aplicando|usando|ejecutando|realizando|desarrollando|construyendo|creando|practique|trabaje|intente|realice|desarrollo|construyo|cree/.test(lower)) return 2;
             return 1;
         }
 
+        // =====================================================
+        // DETECCIÓN DE INDICADORES METACOGNITIVOS
+        // =====================================================
         function detectIndicators(text) {
             const lower = text.toLowerCase();
             const detected = [];
 
-            if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente|fue porque|decidí que|cambié de|mejoré mi/.test(lower)) {
+            // Atribución interna: el estudiante se reconoce como agente
+            if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente|fue porque|decidí que|cambié de|mejoré mi/.test(lower))
                 detected.push('atribución_interna');
-            }
 
-            if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente|primero|después/.test(lower)) {
+            // Inferencia adaptativa: proyecta mejora futura con procedimiento concreto
+            if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente|primero|después/.test(lower))
                 detected.push('inferencia_adaptativa');
-            }
 
-            if (text.length > 50 && text.split(' ').length > 10) {
+            // Síntesis propia: respuesta suficientemente elaborada
+            if (text.length > 50 && text.split(' ').length > 10)
                 detected.push('síntesis_propia');
-            }
 
-            if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente|esto sí|esto no/.test(lower)) {
+            // Bordes precisos: distingue qué sabe y qué no con precisión
+            if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente|esto sí|esto no/.test(lower))
                 detected.push('bordes_precisos');
-            }
+
+            // Ubicación de proceso: sabe exactamente dónde estaba
+            if (/primero|luego|después|al final|en ese paso|en esa etapa|fue entonces|en ese momento/.test(lower))
+                detected.push('ubicación_proceso');
+
+            // Autorregulación demostrada: ajustó su proceso activamente
+            if (/revisé|checé|verifiqué|cambié|ajusté|modifiqué|adapté|corregí|volví a intentar|rehíce/.test(lower))
+                detected.push('autorregulación_demostrada');
 
             return detected;
         }
 
+        // =====================================================
+        // CLASIFICACIÓN DE ELABORACIÓN
+        // =====================================================
         function classifyElaboration(text) {
-            const length = text.length;
-            const words = text.split(' ').length;
-            
-            if (length < 20 || words < 3) return 'breve';
-            if (length < 100 || words < 15) return 'moderada';
+            const words = text.trim().split(/\s+/).length;
+            if (words < 5)  return 'breve';
+            if (words < CONFIG.MIN_WORDS_ELABORATED) return 'moderada';
             return 'elaborada';
         }
 
+        // =====================================================
+        // CIERRE DE SESIÓN
+        // =====================================================
         function shouldClose() {
             if (state.respuestas.length < CONFIG.MIN_RESPONSES_TO_CLOSE) return false;
             return state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE;
         }
 
+        // =====================================================
+        // GRABACIÓN Y PROCESAMIENTO DE AUDIO
+        // =====================================================
         async function startRecording() {
             if (state.sessionClosed || state.isSpeaking) return;
             try {
@@ -704,18 +835,14 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 state.mediaRecorder = new MediaRecorder(stream);
                 state.audioChunks = [];
-                state.mediaRecorder.ondataavailable = (event) => {
-                    state.audioChunks.push(event.data);
-                };
-                state.mediaRecorder.onstop = async () => {
-                    await processAudio();
-                };
+                state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
+                state.mediaRecorder.onstop = processAudio;
                 state.mediaRecorder.start();
                 state.isRecording = true;
                 setMicState('recording');
                 updateStatus('Hablando...', 'active');
-            } catch (error) {
-                console.error('Mic error:', error);
+            } catch (err) {
+                console.error('Mic error:', err);
                 updateStatus('Error micrófono', 'error');
             }
         }
@@ -731,24 +858,20 @@
 
         async function processAudio() {
             try {
-                const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
+                const blob   = new Blob(state.audioChunks, { type: 'audio/webm' });
                 const reader = new FileReader();
+
                 reader.onload = async () => {
                     try {
                         const audioBase64 = reader.result.split(',')[1];
-                        
-                        const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
+                        const res  = await fetch(CONFIG.API.WHISPER, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ audio: audioBase64 })
                         });
 
-                        if (!transcriptResponse.ok) {
-                            throw new Error(`Whisper error: ${transcriptResponse.status}`);
-                        }
-
-                        const transcriptData = await transcriptResponse.json();
-                        const userText = transcriptData.text || '';
+                        if (!res.ok) throw new Error(`Whisper error: ${res.status}`);
+                        const { text: userText = '' } = await res.json();
 
                         if (!userText.trim() || userText.length < 3) {
                             updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
@@ -756,44 +879,43 @@
                             return;
                         }
 
-                        // CALCULAR MÉTRICAS
-                        const latencia = Date.now() - state.lastTurnoTime;
-                        const longitud = userText.length;
-                        const numPalabras = userText.split(' ').length;
+                        // ---- CÁLCULO DE MÉTRICAS COMPLETAS ----
+                        const latencia    = Date.now() - state.lastTurnoTime;
+                        const numPalabras = userText.trim().split(/\s+/).length;
+                        const longitud    = userText.length;
                         const elaboracion = classifyElaboration(userText);
 
+                        // Scores estadísticos (Motor Flavell)
+                        const complexityScore    = MetricEngine.computeComplexityScore(userText);
+                        const abstractionScore   = MetricEngine.computeAbstractionScore(userText);
+                        const selfRegulationScore= MetricEngine.computeSelfRegulationScore(userText);
+                        const processLocationScore=MetricEngine.computeProcessLocationScore(userText);
+
                         state.metrics[state.turno] = {
-                            latencia,
-                            longitud,
-                            numPalabras,
-                            elaboracion
+                            latencia, longitud, numPalabras, elaboracion,
+                            complexityScore, abstractionScore,
+                            selfRegulationScore, processLocationScore
                         };
 
-                        console.log(`📊 Turno ${state.turno} - Métricas:`, state.metrics[state.turno]);
+                        console.log(`📊 Turno ${state.turno} métricas:`, state.metrics[state.turno]);
 
-                        // Log respuesta
+                        // ---- MOSTRAR RESPUESTA DEL ESTUDIANTE ----
                         showStudentText(userText);
                         state.respuestas.push(userText);
+
                         logToSheet({
-                            turno: state.turno,
-                            fase: state.fase,
-                            speaker: 'student',
-                            tipo: 'respuesta',
+                            turno: state.turno, fase: state.fase,
+                            speaker: 'student', tipo: 'respuesta',
                             texto: userText,
-                            latencia: latencia,
-                            longitudRespuesta: longitud,
-                            numPalabras: numPalabras,
-                            elaboracion: elaboracion
+                            latencia, longitudRespuesta: longitud, numPalabras, elaboracion,
+                            complexityScore, abstractionScore,
+                            selfRegulationScore, processLocationScore
                         });
 
-                        // Detectar fase
+                        // ---- DETECCIÓN DE FASE E INDICADORES ----
                         const newPhase = detectPhase(userText);
-                        if (newPhase !== state.fase) {
-                            state.fase = newPhase;
-                            updatePhase(newPhase);
-                        }
+                        if (newPhase !== state.fase) { state.fase = newPhase; updatePhase(newPhase); }
 
-                        // Detectar indicadores
                         const newIndicators = detectIndicators(userText);
                         state.indicators.push(...newIndicators);
 
@@ -802,171 +924,219 @@
                         updateProgress();
                         saveSessionState();
 
-                        if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
+                        // ---- ¿REPLANTEAMIENTO O SIGUIENTE PREGUNTA? ----
+                        if (elaboracion === 'breve') {
+                            await askRephrasedQuestion();
+                        } else if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
                             await closeSession();
-                            return;
+                        } else {
+                            await askNextQuestion();
                         }
 
-                        await askNextQuestion();
-
-                    } catch (error) {
-                        console.error('Processing error:', error);
+                    } catch (err) {
+                        console.error('Processing error:', err);
                         updateStatus('Error procesando', 'error');
                         setMicState('available');
                     }
                 };
-                reader.readAsDataURL(audioBlob);
-            } catch (error) {
-                console.error('Audio error:', error);
+
+                reader.readAsDataURL(blob);
+            } catch (err) {
+                console.error('Audio error:', err);
                 updateStatus('Error de audio', 'error');
                 setMicState('available');
             }
         }
 
+        // =====================================================
+        // PREGUNTAR — Siguiente pregunta en turno
+        // =====================================================
         async function askNextQuestion() {
-            updateStatus('Mira reflexiona...', 'active');
+            updateStatus('Vigil reflexiona...', 'active');
             showTyping();
             setMicState('processing');
 
             try {
-                const preguntasPhase = MIRA.preguntas[state.fase];
-                const preguntaIdx = (state.turno - 2) % preguntasPhase.length;
-                const nextQuestion = preguntasPhase[preguntaIdx];
+                const phaseQuestions = VIGIL.preguntas[state.fase];
+                // Guardar el índice de la última pregunta para no repetir antes de tiempo
+                const currentIdx = state.lastQuestionIndex[state.fase] !== undefined
+                    ? (state.lastQuestionIndex[state.fase] + 1) % phaseQuestions.length
+                    : 0;
+                state.lastQuestionIndex[state.fase] = currentIdx;
 
+                const question = phaseQuestions[currentIdx];
                 hideTyping();
                 clearDialogue();
-                showMiraText(nextQuestion);
+                showMiraText(question);
                 setMicState('speaking');
-                await speakText(nextQuestion);
+                await speakText(question);
 
                 logToSheet({
-                    turno: state.turno,
-                    fase: state.fase,
-                    speaker: 'mira',
-                    tipo: 'pregunta',
-                    texto: nextQuestion,
-                    latencia: 0,
-                    elaboracion: 'N/A'
+                    turno: state.turno, fase: state.fase,
+                    speaker: 'vigil', tipo: 'pregunta',
+                    texto: question, latencia: 0, elaboracion: 'N/A'
                 });
 
                 setMicState('available');
                 updateStatus('Presiona para hablar', 'active');
                 saveSessionState();
 
-            } catch (error) {
-                console.error('Question error:', error);
+            } catch (err) {
+                console.error('Question error:', err);
                 updateStatus('Error', 'error');
                 setMicState('available');
             }
         }
 
+        // =====================================================
+        // REPLANTEAMIENTO — Cuando la respuesta es breve/vaga
+        // =====================================================
+        async function askRephrasedQuestion() {
+            updateStatus('Vigil insiste...', 'active');
+            showTyping();
+            setMicState('processing');
+
+            // Llevar conteo de replanteamientos para no ciclar
+            const key = `${state.fase}-${state.turno}`;
+            state.rephraseCount[key] = (state.rephraseCount[key] || 0) + 1;
+
+            // Si ya se replanteó 2 veces, pasar a la siguiente pregunta
+            if (state.rephraseCount[key] > 2) {
+                hideTyping();
+                await askNextQuestion();
+                return;
+            }
+
+            const rephrases = VIGIL.replanteamientos[state.fase];
+            const idx = (state.rephraseCount[key] - 1) % rephrases.length;
+            const rephrase = rephrases[idx];
+
+            hideTyping();
+            clearDialogue();
+            showMiraText(rephrase);
+            setMicState('speaking');
+            await speakText(rephrase);
+
+            logToSheet({
+                turno: state.turno, fase: state.fase,
+                speaker: 'vigil', tipo: 'replanteamiento',
+                texto: rephrase, latencia: 0, elaboracion: 'N/A'
+            });
+
+            setMicState('available');
+            updateStatus('Presiona para hablar', 'active');
+            saveSessionState();
+        }
+
+        // =====================================================
+        // CIERRE DE SESIÓN
+        // =====================================================
         async function closeSession() {
             state.sessionClosed = true;
             setMicState('closed');
 
-            let closeMessage = MIRA.cierres.exitoso;
-            if (state.indicators.length === 0) {
-                closeMessage = MIRA.cierres.frustrado;
-            } else if (state.indicators.length === 1) {
-                closeMessage = MIRA.cierres.incompleto;
-            }
+            let closeMsg = VIGIL.cierres.exitoso;
+            if (state.indicators.length === 0) closeMsg = VIGIL.cierres.frustrado;
+            else if (state.indicators.length === 1) closeMsg = VIGIL.cierres.incompleto;
 
             clearDialogue();
-            showMiraText(closeMessage);
+            showMiraText(closeMsg);
             setMicState('speaking');
             updateStatus('Sesión completada ✓', 'success');
-            await speakText(closeMessage);
+            await speakText(closeMsg);
+
+            // Perfil estadístico final de la sesión
+            const profile = MetricEngine.computeSessionProfile(state.metrics);
+            console.log('📈 Perfil estadístico de sesión:', profile);
 
             try {
                 await logToSheet({
-                    turno: state.turno,
-                    fase: state.fase,
-                    speaker: 'mira',
-                    tipo: 'cierre',
-                    texto: closeMessage,
+                    turno: state.turno, fase: state.fase,
+                    speaker: 'vigil', tipo: 'cierre',
+                    texto: closeMsg,
                     indicadoresDetectados: state.indicators.join('|'),
-                    estadoSesion: 'completada'
+                    estadoSesion: 'completada',
+                    // Métricas agregadas de la sesión
+                    metacognitionIndex:  profile?.metacognitionIndex  || 0,
+                    avgComplexity:       profile?.avgComplexity        || 0,
+                    avgAbstraction:      profile?.avgAbstraction       || 0,
+                    avgSelfRegulation:   profile?.avgSelfRegulation    || 0,
+                    avgProcessLocation:  profile?.avgProcessLocation   || 0,
+                    complexityTrend:     profile?.complexityTrend      || 0,
+                    abstractionTrend:    profile?.abstractionTrend     || 0
                 });
-                console.log('✅ Sesión cerrada registrada');
-            } catch (error) {
-                console.error('❌ Error registrando cierre:', error);
+            } catch (err) {
+                console.error('❌ Error registrando cierre:', err);
             }
 
             localStorage.removeItem(`flavell-session-${state.sessionId}`);
             saveSessionState();
-
-            setTimeout(() => {
-                downloadSessionReport();
-            }, 1000);
+            setTimeout(() => downloadSessionReport(), 1000);
         }
 
+        // =====================================================
+        // TTS
+        // =====================================================
         async function speakText(text) {
             state.isSpeaking = true;
             try {
-                const response = await fetch(CONFIG.API.TTS, {
+                const res  = await fetch(CONFIG.API.TTS, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
                 });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
 
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error);
-
-                const audioUrl = `data:audio/mp3;base64,${data.audio}`;
-                const audio = new Audio(audioUrl);
-
-                return new Promise((resolve) => {
-                    const timeout = setTimeout(() => {
-                        state.isSpeaking = false;
-                        resolve();
-                    }, CONFIG.TTS_TIMEOUT);
-
-                    audio.onended = () => {
-                        clearTimeout(timeout);
-                        state.isSpeaking = false;
-                        resolve();
-                    };
-
-                    audio.onerror = () => {
-                        clearTimeout(timeout);
-                        state.isSpeaking = false;
-                        resolve();
-                    };
-
-                    audio.play().catch(() => {
-                        clearTimeout(timeout);
-                        state.isSpeaking = false;
-                        resolve();
-                    });
+                const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+                return new Promise(resolve => {
+                    const timeout = setTimeout(() => { state.isSpeaking = false; resolve(); }, CONFIG.TTS_TIMEOUT);
+                    const done = () => { clearTimeout(timeout); state.isSpeaking = false; resolve(); };
+                    audio.onended = done;
+                    audio.onerror = done;
+                    audio.play().catch(done);
                 });
-
-            } catch (error) {
-                console.error('TTS error:', error);
+            } catch (err) {
+                console.error('TTS error:', err);
                 state.isSpeaking = false;
             }
         }
 
+        // =====================================================
+        // LOG A GOOGLE SHEETS
+        // =====================================================
         async function logToSheet(data) {
             try {
                 const payload = {
-                    userId: state.userId,
+                    userId:    state.userId,
                     sessionId: state.sessionId,
                     userEmail: state.userEmail,
-                    userName: state.userName,
-                    turno: data.turno,
-                    fase: data.fase,
-                    speaker: data.speaker,
-                    tipo: data.tipo,
-                    texto: data.texto || '',
-                    latencia: data.latencia || '',
-                    longitudRespuesta: data.longitudRespuesta || '',
-                    numPalabras: data.numPalabras || '',
-                    elaboracion: data.elaboracion || '',
+                    userName:  state.userName,
+                    turno:     data.turno     || '',
+                    fase:      data.fase      || '',
+                    speaker:   data.speaker   || '',
+                    tipo:      data.tipo      || '',
+                    texto:     data.texto     || '',
+                    latencia:              data.latencia              || '',
+                    longitudRespuesta:     data.longitudRespuesta     || '',
+                    numPalabras:           data.numPalabras           || '',
+                    elaboracion:           data.elaboracion           || '',
+                    // Scores individuales por turno
+                    complexityScore:       data.complexityScore       || '',
+                    abstractionScore:      data.abstractionScore      || '',
+                    selfRegulationScore:   data.selfRegulationScore   || '',
+                    processLocationScore:  data.processLocationScore  || '',
+                    // Métricas agregadas (solo en cierre)
+                    metacognitionIndex:    data.metacognitionIndex    || '',
+                    avgComplexity:         data.avgComplexity         || '',
+                    avgAbstraction:        data.avgAbstraction        || '',
+                    avgSelfRegulation:     data.avgSelfRegulation     || '',
+                    avgProcessLocation:    data.avgProcessLocation    || '',
+                    complexityTrend:       data.complexityTrend       || '',
+                    abstractionTrend:      data.abstractionTrend      || '',
                     indicadoresDetectados: data.indicadoresDetectados || '',
-                    estadoSesion: data.estadoSesion || 'en_progreso'
+                    estadoSesion:          data.estadoSesion          || 'en_progreso'
                 };
-
-                console.log('📤 Enviando a sheet:', payload);
 
                 await fetch(CONFIG.SHEETS_WEBHOOK, {
                     method: 'POST',
@@ -975,88 +1145,115 @@
                 });
 
                 console.log('✅ Registrado en sheet');
-            } catch (error) {
-                console.error('Log error:', error);
+            } catch (err) {
+                console.error('Log error:', err);
             }
         }
 
+        // =====================================================
+        // REPORTE DE SESIÓN
+        // =====================================================
         function generateSessionReport() {
             const BOM = '\uFEFF';
             const faseLabels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
-            const timestamp = new Date().toLocaleString('es-MX');
-            const duration = Math.round((Date.now() - state.startTime) / 1000);
-            const minutes = Math.floor(duration / 60);
-            const seconds = duration % 60;
+            const timestamp  = new Date().toLocaleString('es-MX');
+            const duration   = Math.round((Date.now() - state.startTime) / 1000);
+            const minutes    = Math.floor(duration / 60);
+            const seconds    = duration % 60;
+            const profile    = MetricEngine.computeSessionProfile(state.metrics);
 
-            let report = `# EVALUACIÓN METACOGNITIVA - FLAVELL\n## Sesión de Reflexión Guiada\n\n---\n\n## 📋 Información de la Sesión\n\n| Campo | Valor |\n|-------|-------|\n| **Estudiante** | ${state.userName} |\n| **Email** | ${state.userEmail} |\n| **User ID** | \`${state.userId}\` |\n| **Session ID** | \`${state.sessionId}\` |\n| **Fecha** | ${timestamp} |\n| **Duración** | ${minutes}m ${seconds}s |\n\n---\n\n## 💬 Diálogo Completo por Turnos\n\n### Turno 1: Apertura\n**Mira**: "${MIRA.apertura}"\n\n`;
+            let report = `# EVALUACIÓN METACOGNITIVA — VIGIL by FLAVELL\n## Sesión de Reflexión Guiada\n\n---\n\n`;
+            report += `## 📋 Información de la Sesión\n\n`;
+            report += `| Campo | Valor |\n|-------|-------|\n`;
+            report += `| **Estudiante** | ${state.userName} |\n`;
+            report += `| **Email** | ${state.userEmail} |\n`;
+            report += `| **Session ID** | \`${state.sessionId}\` |\n`;
+            report += `| **Fecha** | ${timestamp} |\n`;
+            report += `| **Duración** | ${minutes}m ${seconds}s |\n\n---\n\n`;
 
-            state.respuestas.forEach((respuesta, indice) => {
-                const turno = indice + 2;
-                const preguntasPhase = MIRA.preguntas[state.fase] || MIRA.preguntas[1];
-                const preguntaIdx = (turno - 2) % preguntasPhase.length;
-                const pregunta = preguntasPhase[preguntaIdx];
-                
-                const metrics = state.metrics[turno] || {};
-                const latencia = metrics.latencia ? `${metrics.latencia}ms` : '-';
-                const longitud = metrics.longitud || '-';
-                const numPalabras = metrics.numPalabras || '-';
-                const elaboracion = metrics.elaboracion || '-';
+            if (profile) {
+                report += `## 📈 Análisis Estadístico de la Sesión\n\n`;
+                report += `| Métrica | Valor |\n|---------|-------|\n`;
+                report += `| **Índice de Metacognición** | ${profile.metacognitionIndex}/100 |\n`;
+                report += `| **Complejidad Promedio** | ${profile.avgComplexity}/100 |\n`;
+                report += `| **Abstracción Promedio** | ${profile.avgAbstraction}/100 |\n`;
+                report += `| **Autorregulación Promedio** | ${profile.avgSelfRegulation}/100 |\n`;
+                report += `| **Ubicación de Proceso Promedio** | ${profile.avgProcessLocation}/100 |\n`;
+                report += `| **Tendencia Complejidad** | ${profile.complexityTrend > 0 ? '↑' : '↓'} ${profile.complexityTrend} |\n`;
+                report += `| **Tendencia Abstracción** | ${profile.abstractionTrend > 0 ? '↑' : '↓'} ${profile.abstractionTrend} |\n`;
+                report += `| **Latencia Promedio** | ${profile.avgLatencia}ms |\n`;
+                report += `| **Palabras Promedio** | ${profile.avgPalabras} |\n\n---\n\n`;
+            }
 
-                report += `### Turno ${turno}\n\n**Mira**: "${pregunta}"\n\n**Estudiante**: "${respuesta}"\n\n**Métricas**:\n- Latencia: ${latencia}\n- Longitud: ${longitud} caracteres\n- Palabras: ${numPalabras}\n- Elaboración: ${elaboracion}\n\n---\n\n`;
+            report += `## 💬 Diálogo por Turnos\n\n### Turno 1: Apertura\n**Vigil**: "${VIGIL.apertura}"\n\n`;
+
+            state.respuestas.forEach((respuesta, idx) => {
+                const turno   = idx + 2;
+                const m       = state.metrics[turno] || {};
+                report += `### Turno ${turno}\n\n`;
+                report += `**Estudiante**: "${respuesta}"\n\n`;
+                report += `**Métricas**:\n`;
+                report += `- Latencia: ${m.latencia || '-'}ms\n`;
+                report += `- Palabras: ${m.numPalabras || '-'}\n`;
+                report += `- Elaboración: ${m.elaboracion || '-'}\n`;
+                report += `- Complejidad: ${m.complexityScore || '-'}/100\n`;
+                report += `- Abstracción: ${m.abstractionScore || '-'}/100\n`;
+                report += `- Autorregulación: ${m.selfRegulationScore || '-'}/100\n`;
+                report += `- Ubicación de proceso: ${m.processLocationScore || '-'}/100\n\n---\n\n`;
             });
 
-            report += `## 🔍 Análisis\n\n- **Fase Alcanzada**: ${state.fase} - ${faseLabels[state.fase]}\n- **Indicadores**: ${state.indicators.length > 0 ? state.indicators.join(', ') : 'Ninguno'}\n- **Respuestas**: ${state.respuestas.length}\n\n`;
+            report += `## 🔍 Indicadores Detectados\n\n`;
+            report += state.indicators.length > 0
+                ? state.indicators.map(i => `- ${i}`).join('\n')
+                : '- Ninguno';
+            report += `\n\n- **Fase Alcanzada**: ${state.fase} — ${faseLabels[state.fase]}\n`;
+            report += `- **Total Respuestas**: ${state.respuestas.length}\n`;
 
             return BOM + report;
         }
 
         function downloadSessionReport() {
             const report = generateSessionReport();
-            const blob = new Blob([report], { type: 'text/markdown; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `FLAVELL-Evaluacion-${state.sessionId}.md`;
+            const blob   = new Blob([report], { type: 'text/markdown; charset=utf-8' });
+            const url    = URL.createObjectURL(blob);
+            const link   = document.createElement('a');
+            link.href     = url;
+            link.download = `VIGIL-Evaluacion-${state.sessionId}.md`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            console.log('📥 Reporte descargado:', link.download);
         }
 
+        // =====================================================
+        // UI HELPERS
+        // =====================================================
         function showMiraText(text) {
-            const dialogue = document.getElementById('dialogueArea');
-            dialogue.innerHTML = '';
+            const area = document.getElementById('dialogueArea');
+            area.innerHTML = '';
             const div = document.createElement('div');
             div.className = 'mira-text';
             div.textContent = text;
-            dialogue.appendChild(div);
+            area.appendChild(div);
         }
 
         function showStudentText(text) {
-            const dialogue = document.getElementById('dialogueArea');
             const div = document.createElement('div');
             div.className = 'student-text';
             div.textContent = text;
-            dialogue.appendChild(div);
+            document.getElementById('dialogueArea').appendChild(div);
         }
 
         function showTyping() {
-            const dialogue = document.getElementById('dialogueArea');
             const div = document.createElement('div');
             div.id = 'typingIndicator';
             div.className = 'typing-dots';
             div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-            dialogue.appendChild(div);
+            document.getElementById('dialogueArea').appendChild(div);
         }
 
-        function hideTyping() {
-            document.getElementById('typingIndicator')?.remove();
-        }
-
-        function clearDialogue() {
-            document.getElementById('dialogueArea').innerHTML = '';
-        }
+        function hideTyping()    { document.getElementById('typingIndicator')?.remove(); }
+        function clearDialogue() { document.getElementById('dialogueArea').innerHTML = ''; }
 
         function updateStatus(text, type = '') {
             const el = document.getElementById('statusText');
@@ -1070,34 +1267,27 @@
         }
 
         function updateProgress() {
-            const el = document.getElementById('progressIndicator');
-            el.textContent = `Turnos: ${state.turno} | Respuestas: ${state.respuestas.length} | Indicadores: ${state.indicators.length}`;
+            document.getElementById('progressIndicator').textContent =
+                `Turnos: ${state.turno} | Respuestas: ${state.respuestas.length} | Indicadores: ${state.indicators.length}`;
         }
 
         function setMicState(micState) {
             const btn = document.getElementById('micButton');
             btn.className = `mic-button ${micState}`;
-            btn.disabled = micState !== 'available';
-
+            btn.disabled  = micState !== 'available';
             if (micState === 'available') {
-                btn.onmousedown = startRecording;
-                btn.onmouseup = stopRecording;
-                btn.ontouchstart = (e) => { e.preventDefault(); startRecording(); };
-                btn.ontouchend = (e) => { e.preventDefault(); stopRecording(); };
+                btn.onmousedown  = startRecording;
+                btn.onmouseup    = stopRecording;
+                btn.ontouchstart = e => { e.preventDefault(); startRecording(); };
+                btn.ontouchend   = e => { e.preventDefault(); stopRecording(); };
             }
         }
 
-        // Esperar a que el DOM esté listo
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 DOM listo');
-            initGoogleAuth();
-        });
-
-        // También intentar cuando toda la página cargue
-        window.addEventListener('load', () => {
-            console.log('🚀 Página completamente cargada');
-            initGoogleAuth();
-        });
+        // =====================================================
+        // INIT
+        // =====================================================
+        window.addEventListener('DOMContentLoaded', initGoogleAuth);
+        window.addEventListener('load', initGoogleAuth);
     </script>
 
 </body>
