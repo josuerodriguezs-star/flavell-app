@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLAVELL — Mira</title>
+    <title>FLAVELL — Evaluación Metacognitiva</title>
     <script src="https://accounts.google.com/gsi/client"></script>
     <style>
         * {
@@ -45,7 +45,6 @@
             position: relative;
         }
 
-        /* MODAL LOGIN */
         .modal {
             display: none;
             position: fixed;
@@ -91,11 +90,42 @@
             letter-spacing: 2px;
         }
 
+        .modal-recovery {
+            font-size: 12px;
+            color: var(--status-green);
+            margin-top: 20px;
+            font-weight: 500;
+        }
+
         #google-signin-button {
             margin-top: 30px;
         }
 
-        /* HEADER */
+        .recovery-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .recovery-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-continue {
+            background: var(--status-green);
+            color: black;
+        }
+
+        .btn-restart {
+            background: var(--status-red);
+            color: white;
+        }
+
         .header {
             text-align: center;
             width: 100%;
@@ -141,7 +171,6 @@
             font-weight: 300;
         }
 
-        /* DIALOGUE AREA */
         .dialogue-area {
             flex: 1;
             display: flex;
@@ -217,7 +246,6 @@
             30% { opacity: 1; transform: translateY(-10px); }
         }
 
-        /* CONTROL AREA */
         .control-area {
             display: flex;
             flex-direction: column;
@@ -246,32 +274,27 @@
 
         .mic-button.available {
             background: var(--status-green);
-            box-shadow: 0 12px 48px rgba(74, 222, 128, 0.4);
             cursor: pointer;
         }
 
         .mic-button.available:hover {
             transform: scale(1.1);
-            box-shadow: 0 16px 64px rgba(74, 222, 128, 0.6);
         }
 
         .mic-button.recording {
             background: var(--status-red);
-            box-shadow: 0 0 40px rgba(239, 68, 68, 0.7);
             animation: pulse-record 0.8s infinite;
             cursor: default;
         }
 
         .mic-button.speaking {
             background: var(--status-gray);
-            box-shadow: 0 12px 48px rgba(107, 114, 128, 0.3);
             cursor: not-allowed;
             opacity: 0.6;
         }
 
         .mic-button.processing {
             background: var(--status-gray);
-            box-shadow: 0 12px 48px rgba(107, 114, 128, 0.3);
             cursor: not-allowed;
         }
 
@@ -326,15 +349,6 @@
                 height: 120px; 
                 font-size: 56px;
             }
-            .mira-text {
-                font-size: 18px;
-            }
-            .student-text {
-                font-size: 16px;
-            }
-            .header-title {
-                font-size: 32px;
-            }
         }
     </style>
 </head>
@@ -344,7 +358,9 @@
         <div class="modal-content">
             <div class="modal-title">FLAVELL</div>
             <div class="modal-subtitle">Evaluación Metacognitiva</div>
-            <div class="modal-agent">Powered by Mira</div>
+            <div class="modal-agent">Anáhuac Online</div>
+            <div id="recoveryMessage" class="modal-recovery hidden"></div>
+            <div id="recoveryButtons" class="recovery-buttons hidden"></div>
             <div id="google-signin-button"></div>
         </div>
     </div>
@@ -352,7 +368,7 @@
     <div class="container hidden" id="appContainer">
         <div class="header">
             <div class="header-title">FLAVELL</div>
-            <div class="header-agent">Mira</div>
+            <div class="header-agent">Anáhuac Online</div>
             <div class="header-user" id="userGreeting">Hola</div>
             <div class="header-phase" id="phaseIndicator">Conectando...</div>
             <div class="header-progress" id="progressIndicator"></div>
@@ -368,12 +384,13 @@
 
     <script>
         console.log('╔════════════════════════════════════════╗');
-        console.log('║  FLAVELL MIRA v10 - Iniciando...       ║');
+        console.log('║  FLAVELL MIRA v12 - FINAL COMPLETE     ║');
+        console.log('║  Anáhuac Online                        ║');
         console.log('╚════════════════════════════════════════╝');
         
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
-            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycby.../exec?token=flavell-mira-token-2024',
+            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx6P0s2eAtYdFGBuGbDJZyzr4GTHq2k-6a-FkdbRgzBsffjQ1hx4pYfCmLNh7a7OBhC/exec?token=flavell-mira-token-2024',
             MAX_TURNS: 12,
             MIN_RESPONSES_TO_CLOSE: 4,
             MIN_INDICATORS_TO_CLOSE: 2,
@@ -400,7 +417,9 @@
             respuestas: [],
             startTime: null,
             indicators: [],
-            lastActivityTime: null
+            lastActivityTime: null,
+            lastTurnoTime: null,
+            metrics: {}
         };
 
         // ===== ELIA'S MIRA LOGIC =====
@@ -432,10 +451,50 @@
             }
         };
 
+        // ===== PERSISTENCIA =====
+        function saveSessionState() {
+            const sessionData = {
+                userId: state.userId,
+                userName: state.userName,
+                userEmail: state.userEmail,
+                sessionId: state.sessionId,
+                turno: state.turno,
+                fase: state.fase,
+                respuestas: state.respuestas,
+                indicators: state.indicators,
+                startTime: state.startTime,
+                metrics: state.metrics,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`flavell-session-${state.sessionId}`, JSON.stringify(sessionData));
+            console.log('💾 Sesión guardada:', state.sessionId);
+        }
+
+        function checkSessionRecovery(userId) {
+            console.log('🔍 Buscando sesiones incompletas para:', userId);
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('flavell-session-')) {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    
+                    if (data.userId === userId && !data.sessionClosed && data.turno > 1) {
+                        const noExpiro = (Date.now() - data.timestamp) < 7200000;
+                        if (noExpiro) {
+                            console.log('✓ RECUPERABLE:', key);
+                            return data;
+                        }
+                    }
+                }
+            }
+            
+            console.log('❌ No hay sesiones recuperables');
+            return null;
+        }
+
         function initGoogleAuth() {
             console.log('🔐 Inicializando Google Auth...');
             
-            // Esperar a que Google esté disponible
             if (typeof google === 'undefined' || !google.accounts) {
                 console.warn('⏳ Google aún no carga, reintentando en 500ms...');
                 setTimeout(initGoogleAuth, 500);
@@ -448,11 +507,11 @@
                     callback: handleGoogleLogin
                 });
                 
-                console.log('✅ Google inicializado correctamente');
+                console.log('✅ Google inicializado');
                 
                 const button = document.getElementById('google-signin-button');
                 if (!button) {
-                    console.error('❌ Error: Elemento #google-signin-button no encontrado');
+                    console.error('❌ Elemento #google-signin-button no encontrado');
                     return;
                 }
                 
@@ -462,7 +521,7 @@
                     text: 'signin_with'
                 });
                 
-                console.log('✅ Botón de Google renderizado');
+                console.log('✅ Botón renderizado');
             } catch (error) {
                 console.error('❌ Error en Google Auth:', error);
             }
@@ -480,29 +539,84 @@
                 state.userId = userData.sub;
                 state.userName = userData.name;
                 state.userEmail = userData.email;
-                state.sessionId = `${state.userId}-${Date.now()}`;
-                state.startTime = Date.now();
-                state.lastActivityTime = Date.now();
 
                 console.log('✅ Login exitoso');
                 console.log('   Usuario:', state.userName);
                 console.log('   Email:', state.userEmail);
                 console.log('   ID:', state.userId);
-                console.log('   Sesión:', state.sessionId);
 
-                document.getElementById('loginModal').classList.remove('active');
-                document.getElementById('appContainer').classList.remove('hidden');
-                document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
-
-                startInterview();
+                const recoveredSession = checkSessionRecovery(state.userId);
+                
+                if (recoveredSession && recoveredSession.turno > 1) {
+                    showRecoveryOption(recoveredSession);
+                } else {
+                    startNewSession();
+                }
             } catch (error) {
                 console.error('❌ Error en login:', error);
             }
         }
 
+        function showRecoveryOption(recoveredSession) {
+            const msg = document.getElementById('recoveryMessage');
+            msg.textContent = `Encontramos una sesión anterior en Fase ${recoveredSession.fase} con ${recoveredSession.turno} turnos. ¿Deseas continuar?`;
+            msg.classList.remove('hidden');
+
+            const buttons = document.getElementById('recoveryButtons');
+            buttons.innerHTML = `
+                <button class="btn-continue" onclick="continueSession()">Continuar Sesión</button>
+                <button class="btn-restart" onclick="startNewSession()">Iniciar Nueva</button>
+            `;
+            buttons.classList.remove('hidden');
+        }
+
+        function continueSession() {
+            const recoveredSession = checkSessionRecovery(state.userId);
+            if (recoveredSession) {
+                state.sessionId = recoveredSession.sessionId;
+                state.turno = recoveredSession.turno;
+                state.fase = recoveredSession.fase;
+                state.respuestas = recoveredSession.respuestas;
+                state.indicators = recoveredSession.indicators;
+                state.startTime = recoveredSession.startTime;
+                state.metrics = recoveredSession.metrics;
+                state.lastActivityTime = Date.now();
+
+                document.getElementById('loginModal').classList.remove('active');
+                document.getElementById('appContainer').classList.remove('hidden');
+                document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
+
+                logToSheet({
+                    tipo: 'recuperacion',
+                    texto: `Sesión recuperada en Fase ${state.fase}, turno ${state.turno}`,
+                    estadoSesion: 'recuperada'
+                });
+
+                continueFromPhase();
+            }
+        }
+
+        function startNewSession() {
+            state.sessionId = `${state.userId}-${Date.now()}`;
+            state.turno = 0;
+            state.fase = 1;
+            state.respuestas = [];
+            state.indicators = [];
+            state.startTime = Date.now();
+            state.metrics = {};
+            state.lastActivityTime = Date.now();
+
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('appContainer').classList.remove('hidden');
+            document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
+
+            startInterview();
+        }
+
         async function startInterview() {
             state.turno = 1;
             state.fase = 1;
+            state.lastTurnoTime = Date.now();
             updateStatus('Iniciando...', 'active');
             updateProgress();
             showMiraText(MIRA.apertura);
@@ -516,8 +630,25 @@
                 fase: state.fase,
                 speaker: 'mira',
                 tipo: 'apertura',
-                texto: MIRA.apertura
+                texto: MIRA.apertura,
+                latencia: 0,
+                elaboracion: 'N/A'
             });
+
+            saveSessionState();
+        }
+
+        async function continueFromPhase() {
+            updateStatus('Sesión recuperada', 'success');
+            updateProgress();
+            
+            const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
+            showMiraText(`Retomamos donde nos quedamos. Estamos en Fase ${state.fase}: ${labels[state.fase]}. Adelante.`);
+            setMicState('speaking');
+            await speakText(`Retomamos donde nos quedamos. Estamos en Fase ${state.fase}. Adelante.`);
+            
+            state.turno++;
+            await askNextQuestion();
         }
 
         function detectPhase(text) {
@@ -533,27 +664,32 @@
             const lower = text.toLowerCase();
             const detected = [];
 
-            // Atribución interna
             if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente|fue porque|decidí que|cambié de|mejoré mi/.test(lower)) {
                 detected.push('atribución_interna');
             }
 
-            // Inferencia adaptativa
             if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente|primero|después/.test(lower)) {
                 detected.push('inferencia_adaptativa');
             }
 
-            // Síntesis propia
             if (text.length > 50 && text.split(' ').length > 10) {
                 detected.push('síntesis_propia');
             }
 
-            // Bordes precisos
             if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente|esto sí|esto no/.test(lower)) {
                 detected.push('bordes_precisos');
             }
 
             return detected;
+        }
+
+        function classifyElaboration(text) {
+            const length = text.length;
+            const words = text.split(' ').length;
+            
+            if (length < 20 || words < 3) return 'breve';
+            if (length < 100 || words < 15) return 'moderada';
+            return 'elaborada';
         }
 
         function shouldClose() {
@@ -564,6 +700,7 @@
         async function startRecording() {
             if (state.sessionClosed || state.isSpeaking) return;
             try {
+                state.lastTurnoTime = Date.now();
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 state.mediaRecorder = new MediaRecorder(stream);
                 state.audioChunks = [];
@@ -599,6 +736,7 @@
                 reader.onload = async () => {
                     try {
                         const audioBase64 = reader.result.split(',')[1];
+                        
                         const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -618,7 +756,22 @@
                             return;
                         }
 
-                        // Log respuesta del estudiante
+                        // CALCULAR MÉTRICAS
+                        const latencia = Date.now() - state.lastTurnoTime;
+                        const longitud = userText.length;
+                        const numPalabras = userText.split(' ').length;
+                        const elaboracion = classifyElaboration(userText);
+
+                        state.metrics[state.turno] = {
+                            latencia,
+                            longitud,
+                            numPalabras,
+                            elaboracion
+                        };
+
+                        console.log(`📊 Turno ${state.turno} - Métricas:`, state.metrics[state.turno]);
+
+                        // Log respuesta
                         showStudentText(userText);
                         state.respuestas.push(userText);
                         logToSheet({
@@ -626,7 +779,11 @@
                             fase: state.fase,
                             speaker: 'student',
                             tipo: 'respuesta',
-                            texto: userText
+                            texto: userText,
+                            latencia: latencia,
+                            longitudRespuesta: longitud,
+                            numPalabras: numPalabras,
+                            elaboracion: elaboracion
                         });
 
                         // Detectar fase
@@ -640,18 +797,16 @@
                         const newIndicators = detectIndicators(userText);
                         state.indicators.push(...newIndicators);
 
-                        // Siguiente turno
                         state.turno++;
                         state.lastActivityTime = Date.now();
                         updateProgress();
+                        saveSessionState();
 
-                        // Verificar cierre
                         if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
                             await closeSession();
                             return;
                         }
 
-                        // Siguiente pregunta
                         await askNextQuestion();
 
                     } catch (error) {
@@ -674,7 +829,6 @@
             setMicState('processing');
 
             try {
-                // Elegir pregunta de la fase actual
                 const preguntasPhase = MIRA.preguntas[state.fase];
                 const preguntaIdx = (state.turno - 2) % preguntasPhase.length;
                 const nextQuestion = preguntasPhase[preguntaIdx];
@@ -690,11 +844,14 @@
                     fase: state.fase,
                     speaker: 'mira',
                     tipo: 'pregunta',
-                    texto: nextQuestion
+                    texto: nextQuestion,
+                    latencia: 0,
+                    elaboracion: 'N/A'
                 });
 
                 setMicState('available');
                 updateStatus('Presiona para hablar', 'active');
+                saveSessionState();
 
             } catch (error) {
                 console.error('Question error:', error);
@@ -707,7 +864,6 @@
             state.sessionClosed = true;
             setMicState('closed');
 
-            // Elegir cierre basado en indicadores
             let closeMessage = MIRA.cierres.exitoso;
             if (state.indicators.length === 0) {
                 closeMessage = MIRA.cierres.frustrado;
@@ -721,7 +877,6 @@
             updateStatus('Sesión completada ✓', 'success');
             await speakText(closeMessage);
 
-            // LOGGING CRÍTICO: Registrar cierre ANTES de descargar
             try {
                 await logToSheet({
                     turno: state.turno,
@@ -729,231 +884,20 @@
                     speaker: 'mira',
                     tipo: 'cierre',
                     texto: closeMessage,
-                    indicadores: state.indicators.join('|'),
-                    respuestasCount: state.respuestas.length
+                    indicadoresDetectados: state.indicators.join('|'),
+                    estadoSesion: 'completada'
                 });
-                console.log('✅ Cierre registrado en sheet');
+                console.log('✅ Sesión cerrada registrada');
             } catch (error) {
                 console.error('❌ Error registrando cierre:', error);
             }
 
-            // Esperar un poco para asegurar que el log se envíe, LUEGO descargar
+            localStorage.removeItem(`flavell-session-${state.sessionId}`);
+            saveSessionState();
+
             setTimeout(() => {
-                console.log('📥 Descargando reporte...');
                 downloadSessionReport();
             }, 1000);
-        }
-
-        function generateSessionReport() {
-            const faseLabels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
-            const timestamp = new Date().toLocaleString('es-MX');
-            const duration = Math.round((Date.now() - state.startTime) / 1000);
-            const minutes = Math.floor(duration / 60);
-            const seconds = duration % 60;
-            
-            // Detectar tarea inferida
-            let tareaInferida = 'No especificada';
-            if (state.respuestas.length > 0) {
-                const firstResponse = state.respuestas[0].toLowerCase();
-                if (/tarea|deber|taller/.test(firstResponse)) tareaInferida = 'Tarea / Deber';
-                else if (/leer|lectura|artículo|texto/.test(firstResponse)) tareaInferida = 'Lectura / Investigación';
-                else if (/problema|resolver|calcular|matemáticas/.test(firstResponse)) tareaInferida = 'Problema / Ejercicio';
-                else if (/proyecto|hacer|construir|crear/.test(firstResponse)) tareaInferida = 'Proyecto / Actividad';
-                else if (/examen|prueba|evaluación|quiz/.test(firstResponse)) tareaInferida = 'Evaluación / Examen';
-            }
-
-            // Momento más profundo (respuesta más larga)
-            const momentoProfundo = state.respuestas.length > 0 
-                ? state.respuestas.reduce((a, b) => a.length > b.length ? a : b)
-                : '';
-
-            // Patrones detectados
-            let patronesSuperf = [];
-            if (state.respuestas.some(r => r.length < 10)) {
-                patronesSuperf.push('respuestas muy breves');
-            }
-            if (state.respuestas.some(r => /^(sí|no|ok|bueno|está bien)$/i.test(r.trim()))) {
-                patronesSuperf.push('respuestas monosilábicas');
-            }
-            if (state.respuestas.filter(r => r.length > 50).length < state.respuestas.length / 2) {
-                patronesSuperf.push('pocas elaboraciones');
-            }
-
-            const report = `# EVALUACIÓN METACOGNITIVA - FLAVELL
-## Sesión de Reflexión Guiada
-
----
-
-## 📋 Información de la Sesión
-
-| Campo | Valor |
-|-------|-------|
-| **Estudiante** | ${state.userName} |
-| **Email** | ${state.userEmail} |
-| **Fecha** | ${timestamp} |
-| **Duración** | ${minutes}m ${seconds}s |
-| **ID Sesión** | \`${state.sessionId}\` |
-
----
-
-## 🎯 Resumen Ejecutivo
-
-- **Tarea inferida**: ${tareaInferida}
-- **Fase inicial**: 1 - Planificación
-- **Fase final**: ${state.fase} - ${faseLabels[state.fase]}
-- **Total de turnos**: ${state.turno}
-- **Respuestas completadas**: ${state.respuestas.length}
-- **Indicadores detectados**: ${state.indicators.length} de ${CONFIG.MIN_INDICATORS_TO_CLOSE} requeridos
-
----
-
-## 💬 Diálogo Completo por Turnos
-
-### Turno 1: Apertura
-**Mira**: "${MIRA.apertura}"
-
-${state.respuestas.map((respuesta, indice) => {
-    const turno = indice + 2;
-    const preguntasPhase = MIRA.preguntas[state.fase] || MIRA.preguntas[1];
-    const preguntaIdx = (turno - 2) % preguntasPhase.length;
-    const pregunta = preguntasPhase[preguntaIdx];
-    
-    return `### Turno ${turno}
-
-**Mira**: "${pregunta}"
-
-**Estudiante**: "${respuesta}"
-
----`;
-}).join('\n')}
-
-## 🔍 Análisis Metacognitivo
-
-### Indicadores Detectados
-${state.indicators.length > 0 
-    ? state.indicators.map(ind => {
-        const labels = {
-            'atribución_interna': '✓ **Atribución Interna**: El estudiante reconoce su responsabilidad en los resultados',
-            'inferencia_adaptativa': '✓ **Inferencia Adaptativa**: Propone cambios específicos para el futuro',
-            'síntesis_propia': '✓ **Síntesis Propia**: Elabora explicaciones con sus propias palabras',
-            'bordes_precisos': '✓ **Bordes Precisos**: Identifica claramente qué sabe y qué no'
-        };
-        return labels[ind] || \`✓ \${ind}\`;
-    }).join('\n')
-    : '- Ninguno detectado aún'
-}
-
-### Autorreflexión Lograda
-${state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE 
-    ? '✅ **SÍ** - El estudiante demostró metacognición genuina'
-    : state.indicators.length > 0
-    ? '⚠️ **PARCIAL** - Se detectaron algunos indicadores pero podría profundizar más'
-    : '❌ **NO** - Se requiere más trabajo para desarrollar metacognición'
-}
-
-### Calidad de Respuestas
-\`\`\`
-Respuestas breves: ${state.respuestas.filter(r => r.length < 20).length}
-Respuestas moderadas: ${state.respuestas.filter(r => r.length >= 20 && r.length < 100).length}
-Respuestas elaboradas: ${state.respuestas.filter(r => r.length >= 100).length}
-\`\`\`
-
-### Progresión de Fases
-- Fase inicial: 1 - Planificación
-- Fase final: ${state.fase} - ${faseLabels[state.fase]}
-- **Progreso**: ${state.fase > 1 ? '✓ El estudiante avanzó a fases más profundas' : 'Se mantuvo en planificación'}
-
----
-
-## 💡 Momentos Clave
-
-### Respuesta Más Profunda
-> "${momentoProfundo}"
-
----
-
-## ⚠️ Patrones Observados
-
-${patronesSuperf.length > 0 
-    ? patronesSuperf.map(p => \`- \${p}\`).join('\n')
-    : 'No se detectaron patrones superficiales significativos'
-}
-
----
-
-## 📝 Notas para el Docente
-
-### Fortalezas
-${state.indicators.includes('atribución_interna') 
-    ? '- Estudiante responsable de sus procesos'
-    : ''
-}
-${state.indicators.includes('síntesis_propia')
-    ? '- Puede elaborar explicaciones con sus palabras'
-    : ''
-}
-${state.respuestas.length >= CONFIG.MIN_RESPONSES_TO_CLOSE
-    ? '- Completó suficientes respuestas para una evaluación robusta'
-    : ''
-}
-
-### Áreas de Mejora
-${state.indicators.length < CONFIG.MIN_INDICATORS_TO_CLOSE
-    ? '- Desarrollar más conciencia sobre el propio proceso'
-    : ''
-}
-${patronesSuperf.includes('respuestas muy breves')
-    ? '- Animar a elaborar más en las respuestas'
-    : ''
-}
-${state.fase === 1
-    ? '- Ayudar a pasar de la planificación a la ejecución'
-    : ''
-}
-
-### Recomendaciones
-1. Seguimiento personalizado sobre los indicadores detectados
-2. Practicar con preguntas que fuerzen mayor reflexión
-3. Revisar las respuestas más elaboradas para fortalecer esas áreas
-4. Crear un portafolio de aprendizajes para dar continuidad
-
----
-
-## 📅 Próximos Pasos
-
-1. **Revisar** esta evaluación con el estudiante
-2. **Registrar** los avances en su portafolio
-3. **Planificar** sesiones de seguimiento según necesidades
-4. **Documentar** el progreso metacognitivo a lo largo del semestre
-
----
-
-**Generado por FLAVELL - Agente Metacognitivo**  
-*${new Date().toISOString()}*`;
-
-            return report;
-        }
-
-        function downloadSessionReport() {
-            const report = generateSessionReport();
-            
-            // Agregar BOM para UTF-8 (arregla caracteres raros)
-            const BOM = '\uFEFF';
-            const fullContent = BOM + report;
-            
-            // Crear blob con encoding UTF-8 explícito
-            const blob = new Blob([fullContent], { type: 'text/markdown; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            // Cambiar a .md (markdown) para mejor lectura
-            link.download = `FLAVELL-Evaluacion-${state.sessionId}.md`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            
-            console.log('✅ Reporte descargado:', link.download);
         }
 
         async function speakText(text) {
@@ -1005,27 +949,79 @@ ${state.fase === 1
         async function logToSheet(data) {
             try {
                 const payload = {
-                    sessionId: state.sessionId,
                     userId: state.userId,
-                    userName: state.userName,
+                    sessionId: state.sessionId,
                     userEmail: state.userEmail,
+                    userName: state.userName,
                     turno: data.turno,
                     fase: data.fase,
                     speaker: data.speaker,
                     tipo: data.tipo,
                     texto: data.texto || '',
-                    indicadores: data.indicadores || '',
-                    respuestasCount: data.respuestasCount || ''
+                    latencia: data.latencia || '',
+                    longitudRespuesta: data.longitudRespuesta || '',
+                    numPalabras: data.numPalabras || '',
+                    elaboracion: data.elaboracion || '',
+                    indicadoresDetectados: data.indicadoresDetectados || '',
+                    estadoSesion: data.estadoSesion || 'en_progreso'
                 };
+
+                console.log('📤 Enviando a sheet:', payload);
 
                 await fetch(CONFIG.SHEETS_WEBHOOK, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: JSON.stringify(payload)
                 });
+
+                console.log('✅ Registrado en sheet');
             } catch (error) {
                 console.error('Log error:', error);
             }
+        }
+
+        function generateSessionReport() {
+            const BOM = '\uFEFF';
+            const faseLabels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
+            const timestamp = new Date().toLocaleString('es-MX');
+            const duration = Math.round((Date.now() - state.startTime) / 1000);
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+
+            let report = `# EVALUACIÓN METACOGNITIVA - FLAVELL\n## Sesión de Reflexión Guiada\n\n---\n\n## 📋 Información de la Sesión\n\n| Campo | Valor |\n|-------|-------|\n| **Estudiante** | ${state.userName} |\n| **Email** | ${state.userEmail} |\n| **User ID** | \`${state.userId}\` |\n| **Session ID** | \`${state.sessionId}\` |\n| **Fecha** | ${timestamp} |\n| **Duración** | ${minutes}m ${seconds}s |\n\n---\n\n## 💬 Diálogo Completo por Turnos\n\n### Turno 1: Apertura\n**Mira**: "${MIRA.apertura}"\n\n`;
+
+            state.respuestas.forEach((respuesta, indice) => {
+                const turno = indice + 2;
+                const preguntasPhase = MIRA.preguntas[state.fase] || MIRA.preguntas[1];
+                const preguntaIdx = (turno - 2) % preguntasPhase.length;
+                const pregunta = preguntasPhase[preguntaIdx];
+                
+                const metrics = state.metrics[turno] || {};
+                const latencia = metrics.latencia ? `${metrics.latencia}ms` : '-';
+                const longitud = metrics.longitud || '-';
+                const numPalabras = metrics.numPalabras || '-';
+                const elaboracion = metrics.elaboracion || '-';
+
+                report += `### Turno ${turno}\n\n**Mira**: "${pregunta}"\n\n**Estudiante**: "${respuesta}"\n\n**Métricas**:\n- Latencia: ${latencia}\n- Longitud: ${longitud} caracteres\n- Palabras: ${numPalabras}\n- Elaboración: ${elaboracion}\n\n---\n\n`;
+            });
+
+            report += `## 🔍 Análisis\n\n- **Fase Alcanzada**: ${state.fase} - ${faseLabels[state.fase]}\n- **Indicadores**: ${state.indicators.length > 0 ? state.indicators.join(', ') : 'Ninguno'}\n- **Respuestas**: ${state.respuestas.length}\n\n`;
+
+            return BOM + report;
+        }
+
+        function downloadSessionReport() {
+            const report = generateSessionReport();
+            const blob = new Blob([report], { type: 'text/markdown; charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `FLAVELL-Evaluacion-${state.sessionId}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            console.log('📥 Reporte descargado:', link.download);
         }
 
         function showMiraText(text) {
@@ -1075,15 +1071,15 @@ ${state.fase === 1
 
         function updateProgress() {
             const el = document.getElementById('progressIndicator');
-            el.textContent = `Respuestas: ${state.respuestas.length} | Indicadores: ${state.indicators.length}`;
+            el.textContent = `Turnos: ${state.turno} | Respuestas: ${state.respuestas.length} | Indicadores: ${state.indicators.length}`;
         }
 
-        function setMicState(state) {
+        function setMicState(micState) {
             const btn = document.getElementById('micButton');
-            btn.className = `mic-button ${state}`;
-            btn.disabled = state !== 'available';
+            btn.className = `mic-button ${micState}`;
+            btn.disabled = micState !== 'available';
 
-            if (state === 'available') {
+            if (micState === 'available') {
                 btn.onmousedown = startRecording;
                 btn.onmouseup = stopRecording;
                 btn.ontouchstart = (e) => { e.preventDefault(); startRecording(); };
@@ -1093,13 +1089,13 @@ ${state.fase === 1
 
         // Esperar a que el DOM esté listo
         window.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 DOM listo, intentando inicializar Google Auth...');
+            console.log('📄 DOM listo');
             initGoogleAuth();
         });
 
         // También intentar cuando toda la página cargue
         window.addEventListener('load', () => {
-            console.log('🚀 Página completamente cargada, verificando Google Auth...');
+            console.log('🚀 Página completamente cargada');
             initGoogleAuth();
         });
     </script>
