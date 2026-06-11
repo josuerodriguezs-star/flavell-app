@@ -13,10 +13,10 @@
         }
 
         :root {
-            --bg-primary: #0a0e27;
-            --bg-secondary: #111829;
-            --text-primary: #e8e8e8;
-            --text-secondary: #888888;
+            --bg-black: #000000;
+            --text-white: #ffffff;
+            --text-gray: #b0b0b0;
+            --text-gray-dark: #808080;
             --accent-orange: #ff9d4d;
             --status-green: #4ade80;
             --status-red: #ef4444;
@@ -24,9 +24,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: var(--bg-black);
+            color: var(--text-white);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -36,16 +36,17 @@
 
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             height: 90vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 40px;
+            gap: 50px;
             position: relative;
         }
 
+        /* MODAL */
         .modal {
             display: none;
             position: fixed;
@@ -53,7 +54,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.98);
             z-index: 2000;
             align-items: center;
             justify-content: center;
@@ -68,72 +69,81 @@
         }
 
         .modal-title {
-            font-size: 32px;
+            font-size: 48px;
             font-weight: 700;
-            margin-bottom: 8px;
-            color: #fff;
+            margin-bottom: 16px;
+            color: var(--text-white);
+            letter-spacing: 2px;
         }
 
         .modal-subtitle {
-            font-size: 14px;
-            color: var(--text-secondary);
+            font-size: 18px;
+            color: var(--text-gray);
             margin-bottom: 8px;
+            font-weight: 400;
         }
 
         .modal-agent {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--accent-orange);
-            font-weight: 600;
-            margin-bottom: 32px;
+            font-weight: 700;
+            margin-bottom: 40px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }
 
         #google-signin-button {
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
+        /* HEADER */
         .header {
             text-align: center;
             width: 100%;
         }
 
         .header-title {
-            font-size: 24px;
+            font-size: 42px;
             font-weight: 700;
-            color: #fff;
-            margin-bottom: 2px;
+            color: var(--text-white);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
         }
 
         .header-agent {
-            font-size: 11px;
+            font-size: 16px;
             color: var(--accent-orange);
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .header-user {
+            font-size: 18px;
+            color: var(--text-gray);
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        .header-phase {
+            font-size: 14px;
+            color: var(--text-gray-dark);
+            margin-top: 10px;
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        .header-safety {
+            font-size: 12px;
+            color: var(--status-red);
+            margin-top: 10px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .header-user {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .header-phase {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 8px;
-            font-style: italic;
-        }
-
-        .header-safety {
-            font-size: 10px;
-            color: var(--status-red);
-            margin-top: 6px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
+        /* CONTENT */
         .content {
             flex: 1;
             display: flex;
@@ -141,117 +151,132 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            gap: 20px;
+            gap: 30px;
             position: relative;
         }
 
+        /* FLOATING TEXT - LARGE */
         .floating-text {
-            font-size: 15px;
-            line-height: 1.7;
-            color: var(--text-primary);
+            font-size: 22px;
+            line-height: 1.8;
+            color: var(--text-white);
             text-align: center;
-            max-width: 90%;
+            max-width: 95%;
             animation: fadeInOut 8s ease-in-out forwards;
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
+            font-weight: 400;
         }
 
         @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(-40px); }
+            0% { opacity: 0; transform: translateY(-50px); }
             10% { opacity: 1; transform: translateY(-50%); }
             90% { opacity: 1; transform: translateY(-50%); }
-            100% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 0; transform: translateY(-20px); }
         }
 
+        /* MIC BUTTON */
         .mic-button {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             border: none;
             background: var(--status-green);
             color: white;
-            font-size: 56px;
+            font-size: 64px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 32px rgba(74, 222, 128, 0.3);
+            box-shadow: 0 12px 48px rgba(74, 222, 128, 0.4);
             font-weight: bold;
         }
 
         .mic-button.available {
             background: var(--status-green);
-            box-shadow: 0 8px 32px rgba(74, 222, 128, 0.3);
+            box-shadow: 0 12px 48px rgba(74, 222, 128, 0.4);
+            cursor: pointer;
         }
 
         .mic-button.available:hover {
-            transform: scale(1.08);
-            box-shadow: 0 12px 40px rgba(74, 222, 128, 0.5);
+            transform: scale(1.1);
+            box-shadow: 0 16px 64px rgba(74, 222, 128, 0.6);
         }
 
         .mic-button.recording {
             background: var(--status-red);
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.7);
             animation: pulse-record 0.8s infinite;
+            cursor: default;
+        }
+
+        .mic-button.speaking {
+            background: var(--status-gray);
+            box-shadow: 0 12px 48px rgba(107, 114, 128, 0.3);
+            cursor: not-allowed;
+            opacity: 0.6;
         }
 
         .mic-button.processing {
             background: var(--status-gray);
-            box-shadow: 0 8px 32px rgba(107, 114, 128, 0.3);
+            box-shadow: 0 12px 48px rgba(107, 114, 128, 0.3);
             cursor: not-allowed;
         }
 
         .mic-button.closed {
             background: var(--status-red);
             cursor: not-allowed;
-            opacity: 0.5;
+            opacity: 0.4;
         }
 
         @keyframes pulse-record {
             0%, 100% { 
-                box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+                box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
                 transform: scale(1);
             }
             50% { 
-                box-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
-                transform: scale(1.02);
+                box-shadow: 0 0 60px rgba(239, 68, 68, 0.9);
+                transform: scale(1.03);
             }
         }
 
+        /* STATUS */
         .status {
-            font-size: 12px;
-            color: var(--text-secondary);
+            font-size: 16px;
+            color: var(--text-gray);
             text-align: center;
-            min-height: 16px;
+            min-height: 24px;
             letter-spacing: 0.5px;
             position: absolute;
             bottom: 0;
+            font-weight: 400;
         }
 
         .status.active {
             color: var(--accent-orange);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .status.warning {
             color: var(--status-red);
-            font-weight: 600;
+            font-weight: 700;
         }
 
+        /* TYPING DOTS */
         .typing-dots {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             justify-content: center;
             position: absolute;
-            bottom: 40px;
+            bottom: 50px;
         }
 
         .typing-dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             background: var(--accent-orange);
             border-radius: 50%;
             animation: typingBounce 1.4s infinite;
@@ -261,8 +286,8 @@
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
         @keyframes typingBounce {
-            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(-6px); }
+            0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-10px); }
         }
 
         .hidden {
@@ -271,12 +296,18 @@
 
         @media (max-width: 600px) {
             .mic-button { 
-                width: 100px; 
-                height: 100px; 
-                font-size: 48px;
+                width: 120px; 
+                height: 120px; 
+                font-size: 56px;
             }
             .container {
-                gap: 30px;
+                gap: 40px;
+            }
+            .floating-text {
+                font-size: 18px;
+            }
+            .header-title {
+                font-size: 36px;
             }
         }
     </style>
@@ -331,6 +362,7 @@
             fase: 1,
             isRecording: false,
             isProcessing: false,
+            isSpeaking: false,
             mediaRecorder: null,
             audioChunks: [],
             intentosFallidos: 0,
@@ -340,7 +372,6 @@
             motivoCierre: null
         };
 
-        // ===== GOOGLE AUTH =====
         function initGoogleAuth() {
             google.accounts.id.initialize({
                 client_id: CONFIG.GOOGLE_CLIENT_ID,
@@ -378,7 +409,6 @@
             }
         }
 
-        // ===== INTERVIEW =====
         async function startInterview() {
             state.turno = 1;
             state.fase = 1;
@@ -387,8 +417,10 @@
             try {
                 const apertura = await callGPT('apertura', null);
                 showFloatingText(apertura);
+                
+                setMicState('speaking');
                 await speakText(apertura);
-
+                
                 logToSheet({ 
                     turno: state.turno, 
                     fase: 1, 
@@ -404,19 +436,18 @@
             } catch (error) {
                 console.error('Start error:', error);
                 updateStatus('Error al iniciar', 'error');
+                setMicState('available');
             }
         }
 
-        // ===== SAFETY: Detectar respuestas sin sentido =====
         function isValidResponse(text) {
             if (!text || text.trim().length === 0) return false;
             if (text.trim().length < 3) return false;
-            if (/^[0-9\s\.\,\!\?]+$/.test(text.trim())) return false; // Solo números/puntuación
-            if (text.toLowerCase() === 'no' || text.toLowerCase() === 'sí' || text.toLowerCase() === 'si') return false; // Respuestas muy cortas
+            if (/^[0-9\s\.\,\!\?]+$/.test(text.trim())) return false;
+            if (text.toLowerCase() === 'no' || text.toLowerCase() === 'sí' || text.toLowerCase() === 'si') return false;
             return true;
         }
 
-        // ===== SAFETY: Cerrar sesión si hay demasiados intentos fallidos =====
         function handleFailedAttempt(userText) {
             state.intentosFallidos++;
             state.respuestasInvalidas.push({ turno: state.turno, texto: userText });
@@ -433,7 +464,7 @@
         }
 
         function handleSuccessfulAttempt(userText) {
-            state.intentosFallidos = 0; // Reset contador
+            state.intentosFallidos = 0;
             state.respuestasValidas.push({ turno: state.turno, texto: userText });
             updateSafetyIndicator();
         }
@@ -445,7 +476,7 @@
                 el.style.display = 'none';
             } else {
                 const remaining = CONFIG.MAX_FAILED_ATTEMPTS - state.intentosFallidos;
-                el.textContent = `⚠️ ${remaining} intento${remaining !== 1 ? 's' : ''} restante${remaining !== 1 ? 's' : ''}`;
+                el.textContent = `⚠️ ${remaining} intento${remaining !== 1 ? 's' : ''} restante`;
                 el.style.display = 'block';
             }
         }
@@ -468,9 +499,8 @@
             });
         }
 
-        // ===== MIC CONTROL =====
         async function startRecording() {
-            if (state.sessionClosed) return;
+            if (state.sessionClosed || state.isSpeaking) return;
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -518,6 +548,8 @@
                 });
 
                 if (!transcriptResponse.ok) {
+                    const errorData = await transcriptResponse.json();
+                    console.error('Whisper error:', transcriptResponse.status, errorData);
                     throw new Error(`Whisper error: ${transcriptResponse.status}`);
                 }
 
@@ -530,12 +562,10 @@
                     return;
                 }
 
-                // ===== VALIDAR RESPUESTA =====
                 if (!isValidResponse(userText)) {
-                    showFloatingText(`"${userText}" - No parece una respuesta válida.`);
+                    showFloatingText(`"${userText}" - No parece válida.`);
                     
                     if (!handleFailedAttempt(userText)) {
-                        // Session cerrada por demasiados intentos
                         return;
                     }
 
@@ -553,7 +583,6 @@
                     return;
                 }
 
-                // ===== RESPUESTA VÁLIDA =====
                 handleSuccessfulAttempt(userText);
                 showFloatingText(userText);
 
@@ -581,7 +610,9 @@
                 hideTyping();
 
                 showFloatingText(response);
-                setMicState('processing');
+                
+                setMicState('speaking');
+                updateStatus('Mira está hablando...', 'active');
                 await speakText(response);
 
                 logToSheet({ 
@@ -608,7 +639,6 @@
             }
         }
 
-        // ===== GPT CALL =====
         async function callGPT(phase, userText) {
             try {
                 const systemPrompt = buildSystemPrompt(phase);
@@ -630,8 +660,9 @@
             }
         }
 
-        // ===== TTS =====
         async function speakText(text) {
+            state.isSpeaking = true;
+            
             try {
                 const response = await fetch(CONFIG.API.TTS, {
                     method: 'POST',
@@ -646,17 +677,26 @@
                 const audio = new Audio(audioUrl);
 
                 return new Promise((resolve) => {
-                    audio.onended = resolve;
-                    audio.onerror = () => resolve();
-                    audio.play().catch(() => resolve());
+                    audio.onended = () => {
+                        state.isSpeaking = false;
+                        resolve();
+                    };
+                    audio.onerror = () => {
+                        state.isSpeaking = false;
+                        resolve();
+                    };
+                    audio.play().catch(() => {
+                        state.isSpeaking = false;
+                        resolve();
+                    });
                 });
 
             } catch (error) {
                 console.error('TTS error:', error);
+                state.isSpeaking = false;
             }
         }
 
-        // ===== PROMPTS =====
         function buildSystemPrompt(phase) {
             const base = `Eres Mira, evaluador metacognitivo experto. REGLAS: Responde en español, máximo 2-3 oraciones, sin asteriscos.`;
             const guides = {
@@ -679,7 +719,6 @@
             return 1;
         }
 
-        // ===== LOGGING =====
         async function logToSheet(data) {
             try {
                 await fetch(CONFIG.SHEETS_WEBHOOK, {
@@ -698,7 +737,6 @@
             }
         }
 
-        // ===== UI =====
         function showFloatingText(text) {
             document.querySelectorAll('.floating-text').forEach(el => el.remove());
             const div = document.createElement('div');
@@ -744,7 +782,6 @@
             }
         }
 
-        // ===== INIT =====
         window.addEventListener('DOMContentLoaded', initGoogleAuth);
     </script>
 
