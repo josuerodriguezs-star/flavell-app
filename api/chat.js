@@ -1,57 +1,650 @@
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'API key not configured' });
-    }
-
-    try {
-        // Convertir formato Gemini a formato Claude
-        const messages = req.body.contents
-            .filter(msg => msg.role === 'user' || msg.role === 'model')
-            .map(msg => ({
-                role: msg.role === 'model' ? 'assistant' : 'user',
-                content: msg.parts[0].text
-            }));
-
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model: 'claude-opus-4-1',
-                max_tokens: 1024,
-                system: req.body.system_instruction?.parts?.[0]?.text || '',
-                messages: messages,
-                temperature: req.body.generationConfig?.temperature || 0.8
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            return res.status(response.status).json(data);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLAVELL — Evaluación Metacognitiva por Voz</title>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        // Convertir respuesta Claude a formato Gemini
-        const geminiFormat = {
-            candidates: [{
-                content: {
-                    parts: [{
-                        text: data.content[0].text
-                    }]
-                }
-            }]
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #111829;
+            --bg-tertiary: #0f1a33;
+            --text-primary: #e8e8e8;
+            --text-secondary: #888888;
+            --accent-orange: #ff9d4d;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            border: 1px solid #1a2847;
+        }
+
+        /* LOGIN MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid #1a2847;
+            border-radius: 12px;
+            padding: 48px 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .modal-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .modal-divider {
+            width: 40px;
+            height: 3px;
+            background: var(--accent-orange);
+            margin: 0 auto 32px;
+        }
+
+        #google-signin-button {
+            margin-top: 20px;
+        }
+
+        /* APP INTERFACE */
+        .app-header {
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+            padding: 20px 24px;
+            border-bottom: 1px solid #1a2847;
+            text-align: center;
+        }
+
+        .app-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .app-user {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .app-phase {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--accent-orange);
+            margin-top: 8px;
+        }
+
+        /* CONTENT AREA */
+        .app-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            gap: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* FLOATING TEXT */
+        .floating-text {
+            background: rgba(26, 40, 71, 0.8);
+            border: 1px solid rgba(255, 157, 77, 0.2);
+            border-left: 3px solid var(--accent-orange);
+            border-radius: 8px;
+            padding: 16px 20px;
+            max-width: 85%;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            animation: fadeInOut 8s ease-in-out forwards;
+            text-align: center;
+            word-wrap: break-word;
+            position: absolute;
+            top: 20px;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-10px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(10px); }
+        }
+
+        /* MIC BUTTON */
+        .mic-button {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 157, 77, 0.15);
+            border: 2px solid var(--accent-orange);
+            color: var(--accent-orange);
+            font-size: 48px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-button:hover:not(:disabled) {
+            background: rgba(255, 157, 77, 0.25);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 157, 77, 0.3);
+        }
+
+        .mic-button.recording {
+            background: rgba(255, 107, 107, 0.25);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+            animation: pulse-record 1s infinite;
+        }
+
+        @keyframes pulse-record {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(255, 107, 107, 0.6); }
+        }
+
+        .mic-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* STATUS */
+        .status-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            min-height: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-text.active {
+            color: var(--accent-orange);
+            font-weight: 600;
+        }
+
+        /* TYPING INDICATOR */
+        .typing-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-orange);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-8px); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .container { height: 100vh; border-radius: 0; }
+            .mic-button { width: 80px; height: 80px; font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN MODAL -->
+    <div class="modal active" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-title">FLAVELL</div>
+            <div class="modal-subtitle">Evaluación Metacognitiva por Voz<br><span style="font-size: 11px;">Powered by OpenAI</span></div>
+            <div class="modal-divider"></div>
+            <div id="google-signin-button"></div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div class="container hidden" id="appContainer">
+        <div class="app-header">
+            <div class="app-title">FLAVELL</div>
+            <div class="app-user" id="userGreeting">Hola</div>
+            <div class="app-phase" id="phaseIndicator">Fase 1: Planificación</div>
+        </div>
+
+        <div class="app-content" id="appContent">
+            <button class="mic-button" id="micButton" title="Presiona para hablar">🎤</button>
+            <div class="status-text" id="statusText">Presiona el micrófono para comenzar</div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CONFIG =====
+        const CONFIG = {
+            GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
+            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbyUJVuKeuKY7OhaJQyKU66E1hawloxg-rZRW58zoSwPhu3fQpncZY5OegjrBYOKp9dW/exec',
+            MAX_TURNS: 12
         };
 
-        return res.status(200).json(geminiFormat);
-    } catch (error) {
-        return res.status(500).json({ error: error.message });
-    }
-}
+        // ===== STATE =====
+        const state = {
+            userId: null,
+            userName: null,
+            userEmail: null,
+            sessionId: null,
+            turno: 0,
+            fase: 1,
+            history: [],
+            transcript: [],
+            isRecording: false,
+            isProcessing: false,
+            mediaRecorder: null,
+            audioChunks: [],
+            isComplete: false
+        };
+
+        // ===== GOOGLE AUTH =====
+        function initGoogleAuth() {
+            google.accounts.id.initialize({
+                client_id: CONFIG.GOOGLE_CLIENT_ID,
+                callback: handleGoogleLogin
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById('google-signin-button'),
+                { theme: 'outline', size: 'large', text: 'signin_with' }
+            );
+        }
+
+        function handleGoogleLogin(response) {
+            try {
+                const base64Url = response.credential.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(
+                    atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+                );
+
+                const userData = JSON.parse(jsonPayload);
+                state.userId = userData.sub;
+                state.userName = userData.name;
+                state.userEmail = userData.email;
+                state.sessionId = `${state.userId}-${Date.now()}`;
+
+                document.getElementById('loginModal').classList.remove('active');
+                document.getElementById('appContainer').classList.remove('hidden');
+                document.getElementById('userGreeting').textContent = `Hola, ${state.userName.split(' ')[0]}`;
+
+                startInterview();
+            } catch (error) {
+                console.error('Auth error:', error);
+                updateStatus('Error en autenticación', 'error');
+            }
+        }
+
+        // ===== INTERVIEW =====
+        async function startInterview() {
+            state.turno = 1;
+            state.fase = 1;
+            updateStatus('Iniciando sesión...', 'active');
+
+            try {
+                const apertura = await callGPT('apertura', null);
+                showFloatingText(apertura);
+                await speakText(apertura);
+
+                logToSheet({
+                    turno: state.turno,
+                    fase: 1,
+                    speaker: 'mira',
+                    tipo: 'apertura',
+                    texto: apertura,
+                    latencia: 0,
+                    indicadores: ''
+                });
+
+                updateStatus('Presiona el micrófono para responder', 'active');
+                enableMic(true);
+
+            } catch (error) {
+                console.error('Start interview error:', error);
+                updateStatus('Error al iniciar. Recarga la página.', 'error');
+            }
+        }
+
+        // ===== MIC RECORDING =====
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                state.mediaRecorder = new MediaRecorder(stream);
+                state.audioChunks = [];
+
+                state.mediaRecorder.ondataavailable = (event) => {
+                    state.audioChunks.push(event.data);
+                };
+
+                state.mediaRecorder.onstop = async () => {
+                    await processAudio();
+                };
+
+                state.mediaRecorder.start();
+                state.isRecording = true;
+
+                document.getElementById('micButton').classList.add('recording');
+                updateStatus('Escuchando...', 'active');
+
+            } catch (error) {
+                console.error('Mic error:', error);
+                updateStatus('Error al acceder al micrófono', 'error');
+            }
+        }
+
+        function stopRecording() {
+            if (state.mediaRecorder && state.isRecording) {
+                state.mediaRecorder.stop();
+                state.isRecording = false;
+                document.getElementById('micButton').classList.remove('recording');
+                updateStatus('Procesando audio...', 'active');
+            }
+        }
+
+        async function processAudio() {
+            try {
+                const audioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
+                updateStatus('Transcribiendo...', 'active');
+
+                // Convertir a base64
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const audioBase64 = reader.result.split(',')[1];
+
+                    // Enviar a Whisper via Vercel
+                    const transcriptResponse = await fetch('/api/whisper', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ audio: audioBase64 })
+                    });
+
+                    const transcriptData = await transcriptResponse.json();
+                    const userText = transcriptData.text;
+
+                    if (!userText || userText.trim().length === 0) {
+                        updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
+                        enableMic(true);
+                        return;
+                    }
+
+                    showFloatingText(userText);
+
+                    logToSheet({
+                        turno: state.turno + 0.5,
+                        fase: state.fase,
+                        speaker: 'student',
+                        tipo: 'respuesta',
+                        texto: userText,
+                        latencia: 0,
+                        indicadores: ''
+                    });
+
+                    // Detectar fase
+                    const newPhase = detectPhase(userText);
+                    if (newPhase !== state.fase) {
+                        state.fase = newPhase;
+                        updatePhase(newPhase);
+                    }
+
+                    state.turno++;
+                    updateStatus('Reflexionando...', 'active');
+                    showTyping();
+
+                    // Llamar a GPT via Vercel
+                    const response = await callGPT(state.fase, userText);
+                    hideTyping();
+
+                    showFloatingText(response);
+                    await speakText(response);
+
+                    logToSheet({
+                        turno: state.turno,
+                        fase: state.fase,
+                        speaker: 'mira',
+                        tipo: 'respuesta',
+                        texto: response,
+                        latencia: 0,
+                        indicadores: ''
+                    });
+
+                    if (state.turno >= CONFIG.MAX_TURNS) {
+                        state.isComplete = true;
+                        updateStatus('Sesión completada. ¡Gracias!', 'active');
+                        enableMic(false);
+                    } else {
+                        updateStatus('Presiona el micrófono para continuar', 'active');
+                        enableMic(true);
+                    }
+                };
+
+                reader.readAsDataURL(audioBlob);
+
+            } catch (error) {
+                console.error('Audio processing error:', error);
+                hideTyping();
+                updateStatus('Error procesando audio. Intenta de nuevo.', 'error');
+                enableMic(true);
+            }
+        }
+
+        // ===== GPT CALL =====
+        async function callGPT(phase, userText) {
+            try {
+                const systemPrompt = buildSystemPrompt(phase);
+                const userPrompt = buildUserPrompt(phase, userText);
+
+                const response = await fetch('/api/gpt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systemPrompt,
+                        userMessage: userPrompt
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error en GPT');
+                }
+
+                return data.text;
+
+            } catch (error) {
+                console.error('GPT error:', error);
+                throw error;
+            }
+        }
+
+        // ===== TEXT-TO-SPEECH =====
+        async function speakText(text) {
+            try {
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error en TTS');
+                }
+
+                const audioUrl = `data:audio/mp3;base64,${data.audio}`;
+                const audio = new Audio(audioUrl);
+
+                return new Promise((resolve) => {
+                    audio.onended = resolve;
+                    audio.play().catch(e => {
+                        console.error('Audio play error:', e);
+                        resolve();
+                    });
+                });
+
+            } catch (error) {
+                console.error('TTS error:', error);
+            }
+        }
+
+        // ===== PROMPTS =====
+        function buildSystemPrompt(phase) {
+            const base = `Eres Mira, evaluador metacognitivo experto. Conducir entrevista socrática.
+REGLAS: Responde en español, máximo 2-3 oraciones, SIN asteriscos, conversacional.`;
+
+            const guides = {
+                1: 'FASE 1 - PLANIFICACIÓN: Pregunta sobre comprensión de tarea, estrategias, conocimiento previo.',
+                2: 'FASE 2 - EJECUCIÓN: Pregunta qué cuesta, si chequea progreso, bloqueos.',
+                3: 'FASE 3 - REFLEXIÓN: Pregunta qué aprendió, qué haría diferente, síntesis.'
+            };
+
+            return base + '\n' + guides[phase];
+        }
+
+        function buildUserPrompt(phase, userText) {
+            if (!userText) {
+                return 'Comienza con: "Hola, soy Mira. Cuéntame, ¿en qué estás trabajando ahorita?"';
+            }
+            return `Respuesta estudiante: "${userText}"\n\nFormula una sola pregunta apropiada para FASE ${phase}.`;
+        }
+
+        // ===== PHASE DETECTION =====
+        function detectPhase(text) {
+            const lower = text.toLowerCase();
+            if (/ya terminé|acabé|finalizé|aprendí|si lo hiciera/.test(lower)) return 3;
+            if (/ya empecé|estoy|hice|leyendo|haciendo|resolviendo/.test(lower)) return 2;
+            return 1;
+        }
+
+        // ===== LOGGING =====
+        async function logToSheet(data) {
+            try {
+                await fetch(CONFIG.SHEETS_WEBHOOK, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        sessionId: state.sessionId,
+                        userId: state.userId,
+                        userEmail: state.userEmail,
+                        userName: state.userName,
+                        ...data
+                    })
+                });
+            } catch (error) {
+                console.error('Logging error:', error);
+            }
+        }
+
+        // ===== UI =====
+        function showFloatingText(text) {
+            const div = document.createElement('div');
+            div.className = 'floating-text';
+            div.textContent = text;
+            document.getElementById('appContent').appendChild(div);
+            setTimeout(() => div.remove(), 8000);
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.id = 'typingIndicator';
+            div.className = 'typing-dots';
+            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            document.getElementById('appContent').appendChild(div);
+        }
+
+        function hideTyping() {
+            document.getElementById('typingIndicator')?.remove();
+        }
+
+        function updateStatus(text, type = '') {
+            const el = document.getElementById('statusText');
+            el.textContent = text;
+            el.className = `status-text ${type === 'active' ? 'active' : ''}`;
+        }
+
+        function updatePhase(phase) {
+            const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
+            document.getElementById('phaseIndicator').textContent = `Fase ${phase}: ${labels[phase]}`;
+        }
+
+        function enableMic(enabled) {
+            const btn = document.getElementById('micButton');
+            btn.disabled = !enabled;
+            if (enabled) {
+                btn.onmousedown = startRecording;
+                btn.onmouseup = stopRecording;
+                btn.ontouchstart = startRecording;
+                btn.ontouchend = stopRecording;
+            }
+        }
+
+        // ===== INIT =====
+        window.addEventListener('DOMContentLoaded', initGoogleAuth);
+        document.getElementById('appContainer')?.classList.add('hidden');
+    </script>
+
+</body>
+</html>
