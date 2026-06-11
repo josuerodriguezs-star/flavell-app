@@ -45,6 +45,7 @@
             position: relative;
         }
 
+        /* MODAL LOGIN */
         .modal {
             display: none;
             position: fixed;
@@ -94,9 +95,11 @@
             margin-top: 30px;
         }
 
+        /* HEADER */
         .header {
             text-align: center;
             width: 100%;
+            padding-top: 20px;
         }
 
         .header-title {
@@ -131,6 +134,14 @@
             font-weight: 300;
         }
 
+        .header-progress {
+            font-size: 11px;
+            color: var(--text-gray-dark);
+            margin-top: 8px;
+            font-weight: 300;
+        }
+
+        /* DIALOGUE AREA */
         .dialogue-area {
             flex: 1;
             display: flex;
@@ -206,12 +217,14 @@
             30% { opacity: 1; transform: translateY(-10px); }
         }
 
+        /* CONTROL AREA */
         .control-area {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
             width: 100%;
+            padding-bottom: 20px;
         }
 
         .mic-button {
@@ -298,6 +311,11 @@
             font-weight: 700;
         }
 
+        .status.success {
+            color: var(--status-green);
+            font-weight: 600;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -313,6 +331,9 @@
             }
             .student-text {
                 font-size: 16px;
+            }
+            .header-title {
+                font-size: 32px;
             }
         }
     </style>
@@ -334,6 +355,7 @@
             <div class="header-agent">Mira</div>
             <div class="header-user" id="userGreeting">Hola</div>
             <div class="header-phase" id="phaseIndicator">Conectando...</div>
+            <div class="header-progress" id="progressIndicator"></div>
         </div>
 
         <div class="dialogue-area" id="dialogueArea"></div>
@@ -349,6 +371,8 @@
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycby.../exec?token=flavell-mira-token-2024',
             MAX_TURNS: 12,
+            MIN_RESPONSES_TO_CLOSE: 4,
+            MIN_INDICATORS_TO_CLOSE: 2,
             TTS_TIMEOUT: 8000,
             API: {
                 WHISPER: '/api/whisper',
@@ -444,6 +468,7 @@
             state.turno = 1;
             state.fase = 1;
             updateStatus('Iniciando...', 'active');
+            updateProgress();
             showMiraText(MIRA.apertura);
             setMicState('speaking');
             await speakText(MIRA.apertura);
@@ -473,12 +498,12 @@
             const detected = [];
 
             // Atribución interna
-            if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente/.test(lower)) {
+            if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente|fue porque|decidí que|cambié de|mejoré mi/.test(lower)) {
                 detected.push('atribución_interna');
             }
 
             // Inferencia adaptativa
-            if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente/.test(lower)) {
+            if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente|primero|después/.test(lower)) {
                 detected.push('inferencia_adaptativa');
             }
 
@@ -488,7 +513,7 @@
             }
 
             // Bordes precisos
-            if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente/.test(lower)) {
+            if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente|esto sí|esto no/.test(lower)) {
                 detected.push('bordes_precisos');
             }
 
@@ -496,9 +521,8 @@
         }
 
         function shouldClose() {
-            if (state.respuestas.length < 2) return false;
-            const indicators = state.indicators;
-            return indicators.length >= 1;
+            if (state.respuestas.length < CONFIG.MIN_RESPONSES_TO_CLOSE) return false;
+            return state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE;
         }
 
         async function startRecording() {
@@ -583,14 +607,10 @@
                         // Siguiente turno
                         state.turno++;
                         state.lastActivityTime = Date.now();
+                        updateProgress();
 
                         // Verificar cierre
-                        if (shouldClose()) {
-                            await closeSession();
-                            return;
-                        }
-
-                        if (state.turno > CONFIG.MAX_TURNS) {
+                        if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
                             await closeSession();
                             return;
                         }
@@ -651,19 +671,19 @@
             state.sessionClosed = true;
             setMicState('closed');
 
-            // Elegir cierre
+            // Elegir cierre basado en indicadores
             let closeMessage = MIRA.cierres.exitoso;
             if (state.indicators.length === 0) {
                 closeMessage = MIRA.cierres.frustrado;
-            } else if (state.respuestas.length < 3) {
+            } else if (state.indicators.length === 1) {
                 closeMessage = MIRA.cierres.incompleto;
             }
 
             clearDialogue();
             showMiraText(closeMessage);
             setMicState('speaking');
+            updateStatus('Sesión completada ✓', 'success');
             await speakText(closeMessage);
-            updateStatus('Sesión completada', 'warning');
 
             logToSheet({
                 turno: state.turno,
@@ -674,6 +694,82 @@
                 indicadores: state.indicators.join('|'),
                 respuestasCount: state.respuestas.length
             });
+
+            // Generar y descargar reporte
+            setTimeout(() => {
+                downloadSessionReport();
+            }, 2000);
+        }
+
+        function generateSessionReport() {
+            const faseLabels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
+            const timestamp = new Date().toLocaleString('es-MX');
+            const duration = Math.round((Date.now() - state.startTime) / 1000);
+            
+            const report = `═══════════════════════════════════════════════════════
+EVALUACIÓN METACOGNITIVA - FLAVELL
+SESIÓN DE REFLEXIÓN GUIADA
+═══════════════════════════════════════════════════════
+
+INFORMACIÓN DEL ESTUDIANTE:
+Nombre: ${state.userName}
+Email: ${state.userEmail}
+Fecha: ${timestamp}
+Duración: ${duration} segundos
+Sesión ID: ${state.sessionId}
+
+─────────────────────────────────────────────────────
+
+RESULTADOS DE LA SESIÓN:
+
+Fase inicial: 1 - Planificación
+Fase final: ${state.fase} - ${faseLabels[state.fase]}
+Total de turnos: ${state.turno}
+Respuestas completadas: ${state.respuestas.length}
+
+INDICADORES DETECTADOS:
+${state.indicators.length > 0 ? state.indicators.join('\n') : 'Ninguno'}
+
+─────────────────────────────────────────────────────
+
+RESPUESTAS DEL ESTUDIANTE:
+
+${state.respuestas.map((r, i) => `Respuesta ${i + 1}:\n"${r}"\n`).join('\n')}
+
+─────────────────────────────────────────────────────
+
+ANÁLISIS:
+
+Calidad de respuestas: ${state.respuestas.length >= CONFIG.MIN_RESPONSES_TO_CLOSE ? 'Buena' : 'Regular'}
+Indicadores de metacognición: ${state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE ? 'Presentes' : 'Limitados'}
+Progresión de fases: ${state.fase > 1 ? 'Avanzó' : 'Se mantuvo'}
+
+─────────────────────────────────────────────────────
+
+PRÓXIMOS PASOS:
+
+1. Revisar las respuestas y reflexiones
+2. Guardar los aprendizajes principales
+3. Planificar cómo aplicar esto en la próxima tarea
+
+═══════════════════════════════════════════════════════
+Generado por FLAVELL - Agente Metacognitivo
+═══════════════════════════════════════════════════════`;
+
+            return report;
+        }
+
+        function downloadSessionReport() {
+            const report = generateSessionReport();
+            const blob = new Blob([report], { type: 'text/plain; charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `FLAVELL-Evaluacion-${state.sessionId}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         async function speakText(text) {
@@ -738,8 +834,6 @@
                     respuestasCount: data.respuestasCount || ''
                 };
 
-                console.log('📊 Log:', payload);
-
                 await fetch(CONFIG.SHEETS_WEBHOOK, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -787,12 +881,17 @@
         function updateStatus(text, type = '') {
             const el = document.getElementById('statusText');
             el.textContent = text;
-            el.className = `status ${type === 'active' ? 'active' : type === 'error' ? 'warning' : ''}`;
+            el.className = `status ${type === 'active' ? 'active' : type === 'error' ? 'warning' : type === 'success' ? 'success' : ''}`;
         }
 
         function updatePhase(phase) {
             const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
             document.getElementById('phaseIndicator').textContent = `Fase ${phase}: ${labels[phase]}`;
+        }
+
+        function updateProgress() {
+            const el = document.getElementById('progressIndicator');
+            el.textContent = `Respuestas: ${state.respuestas.length} | Indicadores: ${state.indicators.length}`;
         }
 
         function setMicState(state) {
