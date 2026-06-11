@@ -142,7 +142,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* DIALOGUE AREA - Permanente */
+        /* DIALOGUE AREA */
         .dialogue-area {
             flex: 1;
             display: flex;
@@ -155,7 +155,6 @@
             min-height: 300px;
         }
 
-        /* MIRA'S TEXT - Permanece visible */
         .mira-text {
             font-size: 20px;
             line-height: 1.8;
@@ -178,7 +177,6 @@
             }
         }
 
-        /* STUDENT'S TEXT - Temporal con fade */
         .student-text {
             font-size: 18px;
             line-height: 1.7;
@@ -197,7 +195,6 @@
             100% { opacity: 0; }
         }
 
-        /* TYPING DOTS */
         .typing-dots {
             display: flex;
             gap: 8px;
@@ -230,7 +227,6 @@
             width: 100%;
         }
 
-        /* MIC BUTTON */
         .mic-button {
             width: 140px;
             height: 140px;
@@ -296,7 +292,6 @@
             }
         }
 
-        /* STATUS */
         .status {
             font-size: 14px;
             color: var(--text-gray);
@@ -362,10 +357,7 @@
             <div class="header-safety" id="safetyIndicator"></div>
         </div>
 
-        <div class="dialogue-area" id="dialogueArea">
-            <!-- Aquí aparecerá el texto de Mira (permanente) -->
-            <!-- Y el texto del estudiante (temporal con fade) -->
-        </div>
+        <div class="dialogue-area" id="dialogueArea"></div>
 
         <div class="control-area">
             <button class="mic-button available" id="micButton">🎤</button>
@@ -380,6 +372,7 @@
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbyUJVuKeuKY7OhaJQyKU66E1hawloxg-rZRW58zoSwPhu3fQpncZY5OegjrBYOKp9dW/exec',
             MAX_TURNS: 12,
             MAX_FAILED_ATTEMPTS: 3,
+            TTS_TIMEOUT: 8000,
             API: {
                 WHISPER: '/api/whisper',
                 GPT: '/api/gpt',
@@ -404,8 +397,20 @@
             respuestasInvalidas: [],
             sessionClosed: false,
             motivoCierre: null,
-            currentMiraText: null
+            currentMiraText: null,
+            startTime: null,
+            lastActionTime: null
         };
+
+        // ===== TIMING =====
+        function getLatency() {
+            if (!state.lastActionTime) return 0;
+            return Date.now() - state.lastActionTime;
+        }
+
+        function markAction() {
+            state.lastActionTime = Date.now();
+        }
 
         function initGoogleAuth() {
             google.accounts.id.initialize({
@@ -432,6 +437,8 @@
                 state.userName = userData.name;
                 state.userEmail = userData.email;
                 state.sessionId = `${state.userId}-${Date.now()}`;
+                state.startTime = Date.now();
+                markAction();
 
                 document.getElementById('loginModal').classList.remove('active');
                 document.getElementById('appContainer').classList.remove('hidden');
@@ -448,6 +455,7 @@
             state.turno = 1;
             state.fase = 1;
             updateStatus('Iniciando...', 'active');
+            markAction();
 
             try {
                 const apertura = await callGPT('apertura', null);
@@ -455,14 +463,17 @@
                 
                 setMicState('speaking');
                 await speakText(apertura);
+                markAction();
                 
                 logToSheet({ 
                     turno: state.turno, 
                     fase: 1, 
                     speaker: 'mira', 
                     tipo: 'apertura', 
+                    actividad: 'greeting',
                     texto: apertura,
-                    intentosFallidos: state.intentosFallidos
+                    latencia: getLatency(),
+                    indicadores: 'inicio_sesion'
                 });
 
                 updateStatus('Lee y presiona cuando estés listo', 'active');
@@ -481,6 +492,19 @@
             if (/^[0-9\s\.\,\!\?]+$/.test(text.trim())) return false;
             if (text.toLowerCase() === 'no' || text.toLowerCase() === 'sí' || text.toLowerCase() === 'si') return false;
             return true;
+        }
+
+        function classifyResponse(text) {
+            const lower = text.toLowerCase();
+            
+            // Detectar si es respuesta corta o elaborada
+            if (text.split(' ').length < 5) {
+                return 'respuesta_breve';
+            } else if (text.split(' ').length >= 5 && text.split(' ').length < 15) {
+                return 'respuesta_moderada';
+            } else {
+                return 'respuesta_elaborada';
+            }
         }
 
         function handleFailedAttempt(userText) {
@@ -527,10 +551,10 @@
                 fase: state.fase,
                 speaker: 'sistema',
                 tipo: 'cierre',
+                actividad: 'session_close',
                 texto: motivo,
-                intentosFallidos: state.intentosFallidos,
-                respuestasValidas: state.respuestasValidas.length,
-                respuestasInvalidas: state.respuestasInvalidas.length
+                latencia: getLatency(),
+                indicadores: `intentos_fallidos:${state.intentosFallidos}|respuestas_validas:${state.respuestasValidas.length}|respuestas_invalidas:${state.respuestasInvalidas.length}`
             });
         }
 
@@ -576,97 +600,111 @@
                 
                 const reader = new FileReader();
                 reader.onload = async () => {
-                    const audioBase64 = reader.result.split(',')[1];
-                    
-                    const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ audio: audioBase64 })
-                    });
-
-                    if (!transcriptResponse.ok) {
-                        const errorData = await transcriptResponse.json();
-                        console.error('Whisper error:', transcriptResponse.status, errorData);
-                        throw new Error(`Whisper error: ${transcriptResponse.status}`);
-                    }
-
-                    const transcriptData = await transcriptResponse.json();
-                    const userText = transcriptData.text || '';
-
-                    if (!userText.trim()) {
-                        updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
-                        setMicState('available');
-                        return;
-                    }
-
-                    if (!isValidResponse(userText)) {
-                        showStudentText(`"${userText}" - No parece válida.`);
+                    try {
+                        const audioBase64 = reader.result.split(',')[1];
                         
-                        if (!handleFailedAttempt(userText)) {
+                        const transcriptResponse = await fetch(CONFIG.API.WHISPER, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ audio: audioBase64 })
+                        });
+
+                        if (!transcriptResponse.ok) {
+                            throw new Error(`Whisper error: ${transcriptResponse.status}`);
+                        }
+
+                        const transcriptData = await transcriptResponse.json();
+                        const userText = transcriptData.text || '';
+
+                        if (!userText.trim()) {
+                            updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
+                            setMicState('available');
                             return;
                         }
+
+                        if (!isValidResponse(userText)) {
+                            showStudentText(`"${userText}" - No parece válida.`);
+                            
+                            if (!handleFailedAttempt(userText)) {
+                                return;
+                            }
+
+                            const responseType = classifyResponse(userText);
+                            logToSheet({ 
+                                turno: state.turno, 
+                                fase: state.fase, 
+                                speaker: 'student', 
+                                tipo: 'respuesta_invalida', 
+                                actividad: responseType,
+                                texto: userText,
+                                latencia: getLatency(),
+                                indicadores: `intentos_fallidos:${state.intentosFallidos}`
+                            });
+
+                            updateStatus('Respuesta no válida. Intenta de nuevo.', 'error');
+                            setMicState('available');
+                            return;
+                        }
+
+                        handleSuccessfulAttempt(userText);
+                        showStudentText(userText);
+                        markAction();
+
+                        const responseType = classifyResponse(userText);
+                        logToSheet({ 
+                            turno: state.turno + 0.5, 
+                            fase: state.fase, 
+                            speaker: 'student', 
+                            tipo: 'respuesta', 
+                            actividad: responseType,
+                            texto: userText,
+                            latencia: getLatency(),
+                            indicadores: `valida:true`
+                        });
+
+                        const newPhase = detectPhase(userText);
+                        if (newPhase !== state.fase) {
+                            state.fase = newPhase;
+                            updatePhase(newPhase);
+                        }
+
+                        state.turno++;
+                        updateStatus('Mira está reflexionando...', 'active');
+                        showTyping();
+                        setMicState('processing');
+
+                        const response = await callGPT(state.fase, userText);
+                        hideTyping();
+                        markAction();
+
+                        clearDialogue();
+                        showMiraText(response);
+                        
+                        setMicState('speaking');
+                        updateStatus('Mira está hablando...', 'active');
+                        await speakText(response);
+                        markAction();
 
                         logToSheet({ 
                             turno: state.turno, 
                             fase: state.fase, 
-                            speaker: 'student', 
-                            tipo: 'respuesta_invalida', 
-                            texto: userText,
-                            intentosFallidos: state.intentosFallidos
+                            speaker: 'mira', 
+                            tipo: 'respuesta', 
+                            actividad: 'reflexion',
+                            texto: response,
+                            latencia: getLatency(),
+                            indicadores: `fase:${state.fase}`
                         });
 
-                        updateStatus('Respuesta no válida. Intenta de nuevo.', 'error');
-                        setMicState('available');
-                        return;
-                    }
-
-                    handleSuccessfulAttempt(userText);
-                    showStudentText(userText);
-
-                    logToSheet({ 
-                        turno: state.turno + 0.5, 
-                        fase: state.fase, 
-                        speaker: 'student', 
-                        tipo: 'respuesta', 
-                        texto: userText,
-                        intentosFallidos: state.intentosFallidos
-                    });
-
-                    const newPhase = detectPhase(userText);
-                    if (newPhase !== state.fase) {
-                        state.fase = newPhase;
-                        updatePhase(newPhase);
-                    }
-
-                    state.turno++;
-                    updateStatus('Mira está reflexionando...', 'active');
-                    showTyping();
-                    setMicState('processing');
-
-                    const response = await callGPT(state.fase, userText);
-                    hideTyping();
-
-                    // LIMPIAR texto del estudiante y mostrar Mira
-                    clearDialogue();
-                    showMiraText(response);
-                    
-                    setMicState('speaking');
-                    updateStatus('Mira está hablando...', 'active');
-                    await speakText(response);
-
-                    logToSheet({ 
-                        turno: state.turno, 
-                        fase: state.fase, 
-                        speaker: 'mira', 
-                        tipo: 'respuesta', 
-                        texto: response,
-                        intentosFallidos: state.intentosFallidos
-                    });
-
-                    if (state.turno >= CONFIG.MAX_TURNS) {
-                        closeSession('Sesión completada');
-                    } else {
-                        updateStatus('Lee y presiona cuando estés listo', 'active');
+                        if (state.turno >= CONFIG.MAX_TURNS) {
+                            closeSession('Sesión completada');
+                        } else {
+                            updateStatus('Lee y presiona cuando estés listo', 'active');
+                            setMicState('available');
+                        }
+                    } catch (error) {
+                        console.error('Processing error:', error);
+                        updateStatus('Error procesando audio', 'error');
                         setMicState('available');
                     }
                 };
@@ -719,16 +757,30 @@
                 const audio = new Audio(audioUrl);
 
                 return new Promise((resolve) => {
+                    // TIMEOUT: Si TTS no termina en 8s, continuar
+                    const timeout = setTimeout(() => {
+                        state.isSpeaking = false;
+                        console.warn('TTS timeout - continuando');
+                        resolve();
+                    }, CONFIG.TTS_TIMEOUT);
+
                     audio.onended = () => {
+                        clearTimeout(timeout);
                         state.isSpeaking = false;
                         resolve();
                     };
+
                     audio.onerror = () => {
+                        clearTimeout(timeout);
                         state.isSpeaking = false;
+                        console.warn('TTS error - continuando');
                         resolve();
                     };
+
                     audio.play().catch(() => {
+                        clearTimeout(timeout);
                         state.isSpeaking = false;
+                        console.warn('TTS play failed - continuando');
                         resolve();
                     });
                 });
@@ -742,9 +794,9 @@
         function buildSystemPrompt(phase) {
             const base = `Eres Mira, evaluador metacognitivo experto. REGLAS: Responde en español, máximo 2-3 oraciones, sin asteriscos.`;
             const guides = {
-                1: 'FASE 1 - PLANIFICACIÓN: Pregunta sobre comprensión de tarea, estrategias.',
-                2: 'FASE 2 - EJECUCIÓN: Pregunta qué cuesta, si chequea progreso.',
-                3: 'FASE 3 - REFLEXIÓN: Pregunta qué aprendió, qué haría diferente.'
+                1: 'FASE 1 - PLANIFICACIÓN: Pregunta sobre comprensión de tarea, estrategias, objetivos.',
+                2: 'FASE 2 - EJECUCIÓN: Pregunta qué cuesta, si chequea progreso, dificultades.',
+                3: 'FASE 3 - REFLEXIÓN: Pregunta qué aprendió, qué haría diferente, logros.'
             };
             return base + '\n' + guides[phase];
         }
@@ -756,35 +808,54 @@
 
         function detectPhase(text) {
             const lower = text.toLowerCase();
-            if (/terminé|acabé|finalizé|aprendí/.test(lower)) return 3;
-            if (/empecé|estoy|hice|leyendo|haciendo/.test(lower)) return 2;
+            
+            // FASE 3 - REFLEXIÓN (conclusión)
+            if (/terminé|acabé|finalizé|completé|aprendí|descubrí|entendí|me di cuenta|resultó|funcionó|no funcionó|conclusión|resultado|logré|conseguí|dominé|comprendí|asimilé|reflexiono|considera|pensé|analice|evalúe|consideré|mejoraría|cambiaría|siguiente vez|próxima|error|equivocación|reto|desafío/.test(lower)) 
+                return 3;
+            
+            // FASE 2 - EJECUCIÓN (en proceso)
+            if (/empecé|estoy|hice|haciendo|leyendo|escribiendo|resolviendo|calculando|analizando|buscando|investigando|encontré|revisando|checando|probando|intentando|aplicando|usando|usando|ejecutando|realizando|desarrollando|construyendo|creando|practique|trabaje|intente|realice|desarrollo|construyo|cree/.test(lower)) 
+                return 2;
+            
+            // FASE 1 - PLANIFICACIÓN (default)
             return 1;
         }
 
         async function logToSheet(data) {
             try {
+                const payload = {
+                    timestamp: new Date().toISOString(),
+                    sessionId: state.sessionId,
+                    userId: state.userId,
+                    userEmail: state.userEmail,
+                    userName: state.userName,
+                    turno: data.turno,
+                    fase: data.fase,
+                    speaker: data.speaker,
+                    tipo: data.tipo,
+                    actividad: data.actividad || '',
+                    texto: data.texto || '',
+                    latencia: data.latencia || 0,
+                    indicadores: data.indicadores || ''
+                };
+
+                console.log('📊 Logging to sheet:', payload);
+
                 await fetch(CONFIG.SHEETS_WEBHOOK, {
                     method: 'POST',
                     mode: 'no-cors',
-                    body: JSON.stringify({
-                        sessionId: state.sessionId,
-                        userId: state.userId,
-                        userEmail: state.userEmail,
-                        userName: state.userName,
-                        ...data
-                    })
+                    body: JSON.stringify(payload)
                 });
+
+                console.log('✅ Logged to sheet');
             } catch (error) {
-                // Silent fail
+                console.error('Sheet logging error:', error);
             }
         }
 
-        // ===== UI DIALOGUE =====
         function showMiraText(text) {
             state.currentMiraText = text;
             const dialogue = document.getElementById('dialogueArea');
-            
-            // Limpiar textos anteriores (mantener estructura)
             dialogue.innerHTML = '';
             
             const div = document.createElement('div');
