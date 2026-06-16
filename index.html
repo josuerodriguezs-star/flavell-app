@@ -1087,8 +1087,47 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
                 const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
+                //=========================================
+                //Manejo de interrupción por parte del usuario 061626
+                //Se agrega para que el usuario tenga la opción de interrumpir al agente; manteniendo activo el microfono y detectando audio si llega a haber
+                //=========================================
+                        const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioCtx = new AudioContext();
+        const source   = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+        const buf = new Float32Array(analyser.fftSize);
+
+        const THRESHOLD  = 0.04;  // ajusta según el ruido ambiente
+        const CONFIRM_MS = 200;   // evita falsos positivos con ruidos cortos
+        let   voiceTimer = null;
+
+        const monitor = setInterval(() => {
+            analyser.getFloatTimeDomainData(buf);
+            const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
+
+            if (rms > THRESHOLD) {
+                if (!voiceTimer) {
+                    voiceTimer = setTimeout(() => {
+                        // Usuario habló → interrumpir
+                        audio.pause();
+                        clearInterval(monitor);
+                        audioCtx.close();
+                        stream.getTracks().forEach(t => t.stop());
+                        state.isSpeaking = false;
+                        startRecording(); // arrancar captura directamente
+                    }, CONFIRM_MS);
+                }
+            } else {
+                clearInterval(voiceTimer);
+                voiceTimer = null;
+            }
+        }, 50);
+                //=====================================
+                //Fin de manejo de interrupciones del usuario
+                //=====================================
                 return new Promise(resolve => {
                     const timeout = setTimeout(() => { state.isSpeaking = false; resolve(); }, CONFIG.TTS_TIMEOUT);
                     const done = () => { clearTimeout(timeout); state.isSpeaking = false; resolve(); };
