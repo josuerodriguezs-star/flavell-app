@@ -3,1292 +3,1219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Internamente: FLAVELL. Públicamente: VIGIL -->
-    <title>VIGIL — Evaluación Metacognitiva</title>
+    <title>VIGIL — Anáhuac Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg-black: #000000;
-            --text-white: #ffffff;
-            --text-gray: #b0b0b0;
-            --text-gray-dark: #808080;
-            --accent-orange: #ff9d4d;
-            --status-green: #4ade80;
-            --status-red: #ef4444;
-            --status-gray: #6b7280;
+            --void:        #050508;
+            --deep:        #0d0d1a;
+            --nebula:      #1a1a3e;
+            --violet:      #6c63ff;
+            --violet-dim:  #3d3a8a;
+            --bio:         #39ff85;
+            --bio-dim:     #1a7a3f;
+            --white:       #f0f0ff;
+            --gray:        #7070a0;
+            --gray-dim:    #3a3a5a;
+
+            /* Estado actual — cambia por JS */
+            --state-color: var(--violet);
+            --state-glow:  rgba(108, 99, 255, 0.15);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            background: var(--bg-black);
-            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            background: var(--void);
+            color: var(--white);
             min-height: 100vh;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
-        .container {
+        /* ── CANVAS ESPACIAL ── */
+        #spaceCanvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── MODAL LOGIN ── */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 8, 0.97);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal.active { display: flex; }
+
+        .modal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 64px;
+            font-weight: 700;
+            letter-spacing: 12px;
+            color: var(--white);
+            text-shadow: 0 0 40px var(--violet);
+        }
+        .modal-sub {
+            font-size: 13px;
+            color: var(--gray);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .modal-org {
+            font-size: 11px;
+            color: var(--violet);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+        .modal-recovery {
+            font-size: 12px;
+            color: var(--bio);
+            text-align: center;
+            max-width: 340px;
+            line-height: 1.6;
+        }
+        .recovery-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .recovery-buttons button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .btn-continue { background: var(--bio); color: #000; }
+        .btn-restart  { background: var(--gray-dim); color: var(--white); }
+
+        /* ── APP CONTAINER ── */
+        #appContainer {
+            position: relative;
+            z-index: 1;
             width: 100%;
-            max-width: 600px;
-            height: 90vh;
+            max-width: 560px;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            position: relative;
+            padding: 32px 24px 28px;
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.98);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            text-align: center;
-        }
-
-        .modal-title {
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: var(--text-white);
-            letter-spacing: 2px;
-        }
-
-        .modal-subtitle {
-            font-size: 18px;
-            color: var(--text-gray);
-            margin-bottom: 8px;
-            font-weight: 400;
-        }
-
-        .modal-agent {
-            font-size: 14px;
-            color: var(--accent-orange);
-            font-weight: 700;
-            margin-bottom: 40px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .modal-recovery {
-            font-size: 12px;
-            color: var(--status-green);
-            margin-top: 20px;
-            font-weight: 500;
-        }
-
-        #google-signin-button {
-            margin-top: 30px;
-        }
-
-        .recovery-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-
-        .recovery-buttons button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .btn-continue {
-            background: var(--status-green);
-            color: black;
-        }
-
-        .btn-restart {
-            background: var(--status-red);
-            color: white;
-        }
-
-        .header {
+        /* ── HEADER ── */
+        .hdr {
             text-align: center;
             width: 100%;
-            padding-top: 20px;
         }
-
-        .header-title {
-            font-size: 36px;
+        .hdr-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
             font-weight: 700;
-            color: var(--text-white);
-            margin-bottom: 8px;
-            letter-spacing: 1px;
+            letter-spacing: 8px;
+            color: var(--white);
+            opacity: 0.9;
         }
-
-        .header-agent {
-            font-size: 14px;
-            color: var(--accent-orange);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-        }
-
-        .header-user {
-            font-size: 16px;
-            color: var(--text-gray);
-            margin-top: 4px;
-            font-weight: 400;
-        }
-
-        .header-phase {
+        .hdr-user {
             font-size: 12px;
-            color: var(--text-gray-dark);
-            margin-top: 8px;
-            font-style: italic;
-            font-weight: 300;
+            color: var(--gray);
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+        .hdr-phase {
+            font-size: 10px;
+            color: var(--violet);
+            margin-top: 4px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            min-height: 14px;
         }
 
-        .header-progress {
-            font-size: 11px;
-            color: var(--text-gray-dark);
-            margin-top: 8px;
-            font-weight: 300;
-        }
-
-        .dialogue-area {
+        /* ── DIALOGUE AREA ── */
+        .dialogue {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 30px 20px;
-            gap: 20px;
-            min-height: 300px;
+            padding: 20px 0;
+            gap: 16px;
         }
 
-        .mira-text {
-            font-size: 20px;
-            line-height: 1.8;
-            color: var(--text-white);
+        .vigil-text {
+            font-size: 19px;
+            line-height: 1.85;
+            color: var(--white);
             text-align: center;
-            max-width: 95%;
-            font-weight: 400;
-            letter-spacing: 0.5px;
-            animation: slideIn 0.5s ease-out;
+            max-width: 94%;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+            animation: textIn 0.6s ease-out;
         }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
+        @keyframes textIn {
+            from { opacity: 0; transform: translateY(12px); }
             to   { opacity: 1; transform: translateY(0); }
         }
 
         .student-text {
-            font-size: 18px;
+            font-size: 15px;
             line-height: 1.7;
-            color: var(--text-gray);
+            color: var(--gray);
             text-align: center;
-            max-width: 95%;
+            max-width: 90%;
             font-weight: 400;
-            letter-spacing: 0.4px;
-            animation: fadeOut 6s ease-in-out forwards;
-            margin-top: 20px;
+            font-style: italic;
+            animation: fadeOut 7s ease-in-out forwards;
+            margin-top: 12px;
         }
-
         @keyframes fadeOut {
-            0%   { opacity: 1; }
-            85%  { opacity: 1; }
-            100% { opacity: 0; }
+            0%, 80% { opacity: 0.7; }
+            100%     { opacity: 0; }
         }
 
-        .typing-dots {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 20px;
+        /* ── WAVEFORM ── */
+        #waveCanvas {
+            width: 100%;
+            max-width: 480px;
+            height: 80px;
+            margin: 8px 0;
         }
 
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-orange);
-            border-radius: 50%;
-            animation: typingBounce 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typingBounce {
-            0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
-            30%            { opacity: 1;   transform: translateY(-10px); }
-        }
-
-        .control-area {
+        /* ── CONTROL AREA ── */
+        .ctrl {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 16px;
             width: 100%;
-            padding-bottom: 20px;
         }
 
-        .mic-button {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            border: none;
-            background: var(--status-green);
-            color: white;
-            font-size: 64px;
-            cursor: pointer;
-            transition: all 0.2s ease;
+        /* Mic ring — estado visual principal */
+        .mic-ring {
+            position: relative;
+            width: 88px;
+            height: 88px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 12px 48px rgba(74, 222, 128, 0.4);
-            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .mic-button.available          { background: var(--status-green); cursor: pointer; }
-        .mic-button.available:hover    { transform: scale(1.1); }
-        .mic-button.recording          { background: var(--status-red); animation: pulse-record 0.8s infinite; cursor: default; }
-        .mic-button.speaking           { background: var(--status-gray); cursor: not-allowed; opacity: 0.6; }
-        .mic-button.processing         { background: var(--status-gray); cursor: not-allowed; }
-        .mic-button.closed             { background: var(--status-red); cursor: not-allowed; opacity: 0.4; }
-
-        @keyframes pulse-record {
-            0%, 100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); transform: scale(1); }
-            50%       { box-shadow: 0 0 60px rgba(239, 68, 68, 0.9); transform: scale(1.03); }
+        /* Anillo exterior animado */
+        .mic-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 1.5px solid var(--state-color);
+            opacity: 0.4;
+            transition: all 0.4s ease;
+        }
+        /* Anillo pulso */
+        .mic-ring::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: 50%;
+            border: 1px solid var(--state-color);
+            opacity: 0;
+            animation: none;
         }
 
-        .status { font-size: 14px; color: var(--text-gray); text-align: center; min-height: 20px; letter-spacing: 0.5px; font-weight: 400; }
-        .status.active  { color: var(--accent-orange); font-weight: 600; }
-        .status.warning { color: var(--status-red); font-weight: 700; }
-        .status.success { color: var(--status-green); font-weight: 600; }
+        .mic-ring.listening::after {
+            opacity: 0.25;
+            animation: ringPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes ringPulse {
+            0%, 100% { transform: scale(1);    opacity: 0.25; }
+            50%       { transform: scale(1.15); opacity: 0;    }
+        }
+
+        .mic-inner {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--deep);
+            border: 1.5px solid var(--state-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px var(--state-glow);
+            user-select: none;
+        }
+
+        /* Estado: disponible */
+        .mic-ring.available { cursor: pointer; }
+        .mic-ring.available .mic-inner:hover {
+            box-shadow: 0 0 32px var(--state-glow);
+            transform: scale(1.05);
+        }
+
+        /* Estado: escuchando — tonalidad verde bio */
+        .mic-ring.listening {
+            --state-color: var(--bio);
+            --state-glow: rgba(57, 255, 133, 0.2);
+        }
+
+        /* Estado: procesando */
+        .mic-ring.processing {
+            --state-color: var(--gray-dim);
+            --state-glow: transparent;
+            cursor: not-allowed;
+        }
+
+        /* Estado: hablando (Vigil) */
+        .mic-ring.speaking {
+            --state-color: var(--violet);
+            --state-glow: rgba(108, 99, 255, 0.2);
+            cursor: not-allowed;
+        }
+
+        /* Estado: cerrado */
+        .mic-ring.closed {
+            --state-color: var(--gray-dim);
+            --state-glow: transparent;
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: var(--gray);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            min-height: 16px;
+            transition: color 0.3s;
+        }
+        .status-label.active  { color: var(--violet); }
+        .status-label.listen  { color: var(--bio); }
+        .status-label.done    { color: var(--bio); }
 
         .hidden { display: none !important; }
 
-        @media (max-width: 600px) {
-            .mic-button { width: 120px; height: 120px; font-size: 56px; }
+        @media (max-width: 480px) {
+            .vigil-text { font-size: 17px; }
+            .hdr-title  { font-size: 18px; letter-spacing: 6px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .mic-ring::after, .mic-ring.listening::after { animation: none; }
         }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN MODAL — visible como VIGIL -->
-    <div class="modal active" id="loginModal">
-        <div class="modal-content">
-            <div class="modal-title">VIGIL</div>
-            <div class="modal-subtitle">Evaluación Metacognitiva</div>
-            <div class="modal-agent">Anáhuac Online</div>
-            <div id="recoveryMessage" class="modal-recovery hidden"></div>
-            <div id="recoveryButtons" class="recovery-buttons hidden"></div>
-            <div id="google-signin-button"></div>
-        </div>
+<canvas id="spaceCanvas"></canvas>
+
+<!-- LOGIN -->
+<div class="modal active" id="loginModal">
+    <div class="modal-title">VIGIL</div>
+    
+    <div class="modal-org">Anáhuac Online</div>
+    <div id="recoveryMessage" class="modal-recovery hidden"></div>
+    <div id="recoveryButtons" class="recovery-buttons hidden"></div>
+    <div id="google-signin-button"></div>
+</div>
+
+<!-- APP -->
+<div id="appContainer" class="hidden">
+    <div class="hdr">
+        <div class="hdr-title">VIGIL</div>
+        <div class="hdr-user" id="userGreeting"></div>
+        <div class="hdr-phase" id="phaseIndicator"></div>
     </div>
 
-    <!-- APP — visible como VIGIL -->
-    <div class="container hidden" id="appContainer">
-        <div class="header">
-            <div class="header-title">VIGIL</div>
-            <div class="header-agent">Anáhuac Online</div>
-            <div class="header-user" id="userGreeting">Hola</div>
-            <div class="header-phase" id="phaseIndicator">Conectando...</div>
-            <div class="header-progress" id="progressIndicator"></div>
-        </div>
-
-        <div class="dialogue-area" id="dialogueArea"></div>
-
-        <div class="control-area">
-            <button class="mic-button available" id="micButton">🎤</button>
-            <div class="status" id="statusText">Presiona para hablar</div>
-        </div>
+    <div class="dialogue" id="dialogueArea">
+        <canvas id="waveCanvas"></canvas>
     </div>
 
-    <script>
-        // ╔══════════════════════════════════════════════╗
-        // ║  VIGIL by FLAVELL — Evaluación Metacognitiva ║
-        // ║  Agente: Vigil  |  Motor: Flavell            ║
-        // ║  Anáhuac Online                              ║
-        // ╚══════════════════════════════════════════════╝
+    <div class="ctrl">
+        <div class="mic-ring available" id="micRing">
+            <div class="mic-inner" id="micInner">🎤</div>
+        </div>
+        <div class="status-label" id="statusLabel">Presiona para hablar</div>
+    </div>
+</div>
 
-        console.log('╔══════════════════════════════════════════════╗');
-        console.log('║  VIGIL by FLAVELL v13 — Anáhuac Online       ║');
-        console.log('╚══════════════════════════════════════════════╝');
+<script>
+// ╔══════════════════════════════════════════════════════╗
+// ║  VIGIL by FLAVELL v13 — Anáhuac Online              ║
+// ║  Motor: Flavell | Agente: Vigil                     ║
+// ╚══════════════════════════════════════════════════════╝
 
-        // =====================================================
-        // CONFIG (interno: FLAVELL)
-        // =====================================================
-        const CONFIG = {
-            GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
-            SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx6P0s2eAtYdFGBuGbDJZyzr4GTHq2k-6a-FkdbRgzBsffjQ1hx4pYfCmLNh7a7OBhC/exec?token=flavell-mira-token-2024',
-            MAX_TURNS: 12,
-            MIN_RESPONSES_TO_CLOSE: 4,
-            MIN_INDICATORS_TO_CLOSE: 2,
-            TTS_TIMEOUT: 8000,
-            // Umbral mínimo de palabras para considerar una respuesta elaborada
-            MIN_WORDS_ELABORATED: 10,
-            API: {
-                WHISPER: '/api/whisper',
-                GPT: '/api/gpt',
-                TTS: '/api/tts'
-            }
+// ── CONFIG ──────────────────────────────────────────────
+const CONFIG = {
+    GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
+    SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbxGsmj3jru0QJjxr6BUEodWMv_TtQce4ovG1mlT3noQOiaMCqmWPyUvTWS8AxrCYtS4/exec?token=flavell-mira-token-2024',
+    SHEETS_READ:    'https://script.google.com/macros/s/AKfycbxGsmj3jru0QJjxr6BUEodWMv_TtQce4ovG1mlT3noQOiaMCqmWPyUvTWS8AxrCYtS4/exec',
+    MAX_TURNS: 20,
+    TTS_TIMEOUT: 20000,
+    TTS_VOICE: 'nova',
+    TTS_SPEED: 0.92,
+    MIN_WORDS_ELABORATED: 10,
+    API: { WHISPER: '/api/whisper', GPT: '/api/gpt', TTS: '/api/tts' }
+};
+
+// ── ESTADO ───────────────────────────────────────────────
+const state = {
+    userId: null, userName: null, userEmail: null,
+    sessionId: null, turno: 0, fase: 0,
+    isRecording: false, isSpeaking: false,
+    mediaRecorder: null, audioChunks: [], activeStream: null,
+    sessionClosed: false,
+    conversationHistory: [],   // Historial completo para GPT
+    respuestas: [],
+    startTime: null,
+    indicators: [],
+    lastActivityTime: null,
+    lastTurnoTime: null,
+    metrics: {},
+    sessionContext: null,      // Historial de sesiones previas del Sheet
+    currentMeta: null,         // Último bloque META del modelo
+    rephraseCount: {},
+    lastQuestionIndex: {}
+};
+
+// ── MOTOR MÉTRICO ────────────────────────────────────────
+const MetricEngine = {
+    computeComplexityScore(text) {
+        const words = text.trim().split(/\s+/);
+        const wordCount = words.length;
+        if (wordCount === 0) return 0;
+        const lengthScore = Math.min(100, (wordCount / 80) * 100);
+        const unique = new Set(words.map(w => w.toLowerCase().replace(/[^a-záéíóúüñ]/gi, ''))).size;
+        const lexicalDensity = (unique / wordCount) * 100;
+        const proceduralVerbs = /hice|hizo|realicé|apliqué|usé|probé|intenté|calculé|resolví|analicé|construí|diseñé|ejecuté|desarrollé|escribí|leí|estudié|revisé|corregí|planifiqué|organicé|decidí|elegí|cambié|ajusté|medí|comparé|identifiqué|encontré|descubrí/i;
+        const hasProceduralVerbs = proceduralVerbs.test(text) ? 30 : 0;
+        return Math.round(Math.min(100, (lengthScore * 0.4) + (lexicalDensity * 0.3) + hasProceduralVerbs));
+    },
+    computeAbstractionScore(text) {
+        const lower = text.toLowerCase(); let score = 0;
+        if (/porque|por eso|debido a|esto causó|esto provocó|lo que hizo que|entonces/.test(lower)) score += 25;
+        if (/si hubiera|si lo hago|si repito|la próxima vez|si cambiara|hubiera podido|debería haber/.test(lower)) score += 25;
+        if (/me di cuenta|noté que|entendí que|me equivoqué|lo que me faltó|lo que aprendí|reflexioné|analicé mi/.test(lower)) score += 25;
+        if (/esperaba|pensé que|creía que|suponía|resultó que|al final|de lo que pensé/.test(lower)) score += 25;
+        return Math.min(100, score);
+    },
+    computeSelfRegulationScore(text) {
+        const lower = text.toLowerCase(); let score = 0;
+        if (/revisé|checé|verifiqué|me aseguré|comprobé|confirmé|validé|supervisé/.test(lower)) score += 30;
+        if (/cambié|ajusté|modifiqué|adapté|decidí hacer diferente|opté por|en lugar de|en vez de/.test(lower)) score += 35;
+        if (/me equivoqué|corregí|volví a intentar|rehíce|replanteé|retrocedí|empecé de nuevo/.test(lower)) score += 35;
+        return Math.min(100, score);
+    },
+    computeProcessLocationScore(text) {
+        const lower = text.toLowerCase(); let score = 0;
+        if (/primero|luego|después|al final|antes de|una vez que|tras|finalmente|en ese punto|en ese momento/.test(lower)) score += 30;
+        if (/en la parte de|en el punto|en ese paso|en esa etapa|ahí fue cuando|fue entonces|en ese momento específico/.test(lower)) score += 35;
+        if (/el resultado|el output|lo que produje|lo que entregué|el documento|el código|la fórmula|la respuesta|el cálculo|la tarea|el reporte/.test(lower)) score += 35;
+        return Math.min(100, score);
+    },
+    computeSessionProfile(metricsMap) {
+        const entries = Object.values(metricsMap);
+        if (entries.length === 0) return null;
+        const extract = key => entries.map(e => e[key] || 0);
+        const complexity   = extract('complexityScore');
+        const abstraction  = extract('abstractionScore');
+        const selfReg      = extract('selfRegulationScore');
+        const procLocation = extract('processLocationScore');
+        return {
+            avgComplexity:      avg(complexity),
+            avgAbstraction:     avg(abstraction),
+            avgSelfRegulation:  avg(selfReg),
+            avgProcessLocation: avg(procLocation),
+            avgLatencia:        avg(extract('latencia')),
+            avgPalabras:        avg(extract('numPalabras')),
+            complexityTrend:    linearTrend(complexity),
+            abstractionTrend:   linearTrend(abstraction),
+            stdComplexity:      std(complexity),
+            stdAbstraction:     std(abstraction),
+            metacognitionIndex: Math.round(avg(complexity)*0.20 + avg(abstraction)*0.35 + avg(selfReg)*0.25 + avg(procLocation)*0.20)
         };
+    }
+};
 
-        // =====================================================
-        // ESTADO DE SESIÓN
-        // =====================================================
-        const state = {
-            userId: null,
-            userName: null,
-            userEmail: null,
-            sessionId: null,
-            turno: 0,
-            fase: 1,
-            isRecording: false,
-            isSpeaking: false,
-            mediaRecorder: null,
-            audioChunks: [],
-            sessionClosed: false,
-            respuestas: [],
-            startTime: null,
-            indicators: [],
-            lastActivityTime: null,
-            lastTurnoTime: null,
-            metrics: {},
-            // Registro de cuántas veces se ha replanteado cada pregunta
-            rephraseCount: {},
-            // Índice de la última pregunta hecha en cada fase (para control de turno)
-            lastQuestionIndex: {}
-        };
+function avg(arr)  { return arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0; }
+function std(arr)  {
+    if (arr.length < 2) return 0;
+    const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+    return Math.round(Math.sqrt(arr.reduce((s,v)=>s+(v-mean)**2,0)/arr.length));
+}
+function linearTrend(arr) {
+    if (arr.length < 2) return 0;
+    const n=arr.length, xs=arr.map((_,i)=>i);
+    const sumX=xs.reduce((a,b)=>a+b,0), sumY=arr.reduce((a,b)=>a+b,0);
+    const sumXY=xs.reduce((s,x,i)=>s+x*arr[i],0), sumX2=xs.reduce((s,x)=>s+x*x,0);
+    return Math.round(((n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX))*100)/100;
+}
 
-        // =====================================================
-        // LÓGICA DE VIGIL (antes: MIRA)
-        // =====================================================
-        const VIGIL = {
-
-            // Apertura pública: Vigil
-            apertura: "Hola, soy Vigil. Cuéntame, ¿en qué estás trabajando en este momento? No importa si es una tarea, algo que leíste, algún proceso de tu trabajo o algo respecto a tus materias. Lo que quieras que analicemos juntos.",
-
-            // Preguntas por fase — orden correcto según turnos
-            preguntas: {
-                1: [
-                    "¿Qué entendiste que te estaban pidiendo hacer y cuál fue el primer paso concreto que tomaste?",
-                    "¿Qué sabías ya sobre el tema antes de arrancar y cómo lo aplicaste?",
-                    "¿Por dónde decidiste empezar y por qué escogiste ese punto de entrada?"
-                ],
-                2: [
-                    "¿Qué parte del proceso te cuesta o te costó más resolver?",
-                    "¿Qué cambiarías o aún puedes cambiar de tu proceso?",
-                    "¿Hubo algo que no te salió como esperabas?"
-                ],
-                3: [
-                    "¿Qué aprendiste hoy con tus propias palabras, siendo específico en lo que hiciste?",
-                    "¿Te fue mejor o peor de lo que esperabas? ¿A qué le atribuyes eso en concreto?",
-                    "¿Qué parte del proceso sí dominaste bien y cuál se quedó sin resolver?"
-                ]
-            },
-
-            // Replanteamientos cuando la respuesta es breve o vaga
-            // Se usan cuando classifyElaboration() devuelve 'breve'
-            replanteamientos: {
-                1: [
-                    "Cuéntame más sobre cómo lo hiciste concretamente, paso a paso.",
-                    "¿Puedes describir exactamente qué hiciste primero y qué vino después?",
-                    "Dame un ejemplo específico de lo que hiciste, no la idea general."
-                ],
-                2: [
-                    "¿Puedes describir ese momento con más detalle? ¿Qué pasó exactamente?",
-                    "¿Cómo lo intentaste resolver? Cuéntame el procedimiento real.",
-                    "¿Qué acción tomaste cuando te encontraste con eso?"
-                ],
-                3: [
-                    "¿Puedes ser más específico? ¿Qué hiciste exactamente en ese punto?",
-                    "¿Cómo cambiaría tu forma de hacerlo la próxima vez, en pasos concretos?",
-                    "¿Qué resultado obtuviste y qué lo causó, según tú?"
-                ]
-            },
-
-            cierres: {
-                exitoso:    "Creo que llegaste a algo importante hoy. Guárdalo en algún lugar, porque ese tipo de cosas se olvidan rápido. Hasta la próxima.",
-                incompleto: "Quedamos a medias, pero el proceso ya empezó. Sigue pensando en eso cuando puedas.",
-                frustrado:  "Está bien si hoy no salió. Hay sesiones así. Vuelve cuando tengas más energía para esto."
-            }
-        };
-
-        // =====================================================
-        // ANÁLISIS ESTADÍSTICO Y MATEMÁTICO DE MÉTRICAS
-        // (Procesamiento del lado del frontend — equivalente al "back" de la lógica Elia)
-        // =====================================================
-        const MetricEngine = {
-
-            /**
-             * Complejidad de respuesta (0–100)
-             * Combina longitud, densidad léxica y especificidad procedimental.
-             */
-            computeComplexityScore(text) {
-                const words = text.trim().split(/\s+/);
-                const wordCount = words.length;
-                if (wordCount === 0) return 0;
-
-                // 1. Score por longitud normalizado (logístico, satura en ~80 palabras)
-                const lengthScore = Math.min(100, (wordCount / 80) * 100);
-
-                // 2. Densidad léxica: palabras únicas / total (riqueza de vocabulario)
-                const unique = new Set(words.map(w => w.toLowerCase().replace(/[^a-záéíóúüñ]/gi, ''))).size;
-                const lexicalDensity = (unique / wordCount) * 100;
-
-                // 3. Especificidad procedimental: presencia de verbos de acción concretos
-                const proceduralVerbs = /hice|hizo|realicé|apliqué|usé|probé|intenté|calculé|resolví|analicé|construí|diseñé|ejecuté|desarrollé|escribí|leí|estudié|revisé|corregí|planifiqué|organicé|decidí|elegí|cambié|ajusté|medí|comparé|identifiqué|encontré|descubrí/i;
-                const hasProceduralVerbs = proceduralVerbs.test(text) ? 30 : 0;
-
-                // Promedio ponderado
-                const score = (lengthScore * 0.4) + (lexicalDensity * 0.3) + hasProceduralVerbs;
-                return Math.round(Math.min(100, score));
-            },
-
-            /**
-             * Score de abstracción lógica (0–100)
-             * Mide si el estudiante razona sobre su proceso, no solo lo describe.
-             */
-            computeAbstractionScore(text) {
-                const lower = text.toLowerCase();
-                let score = 0;
-
-                // Causalidad: conecta causas con efectos
-                if (/porque|por eso|por eso|debido a|esto causó|esto provocó|lo que hizo que|entonces/.test(lower)) score += 25;
-
-                // Condición: razonamiento hipotético o condicional
-                if (/si hubiera|si lo hago|si repito|la próxima vez|si cambiara|hubiera podido|debería haber/.test(lower)) score += 25;
-
-                // Metacognición explícita: habla de su propio proceso de pensar
-                if (/me di cuenta|noté que|entendí que|me equivoqué|cometí un error|lo que me faltó|lo que aprendí|reflexioné|analicé mi/.test(lower)) score += 25;
-
-                // Comparación con expectativa previa
-                if (/esperaba|pensé que|creía que|suponía|resultó que|al final|de lo que pensé/.test(lower)) score += 25;
-
-                return Math.min(100, score);
-            },
-
-            /**
-             * Score de autorregulación (0–100)
-             * Qué tan activamente el estudiante ajustó su proceso.
-             */
-            computeSelfRegulationScore(text) {
-                const lower = text.toLowerCase();
-                let score = 0;
-
-                // Monitoreo: checar avance
-                if (/revisé|checé|verifiqué|me aseguré|comprobé|confirmé|validé|supervisé/.test(lower)) score += 30;
-
-                // Ajuste de estrategia
-                if (/cambié|ajusté|modifiqué|adapté|decidí hacer diferente|opté por|en lugar de|en vez de/.test(lower)) score += 35;
-
-                // Gestión del error
-                if (/me equivoqué|corregí|volví a intentar|rehíce|replanteé|retrocedí|empecé de nuevo/.test(lower)) score += 35;
-
-                return Math.min(100, score);
-            },
-
-            /**
-             * Score de ubicación del proceso (0–100)
-             * El estudiante demuestra saber exactamente dónde estaba en su proceso.
-             */
-            computeProcessLocationScore(text) {
-                const lower = text.toLowerCase();
-                let score = 0;
-
-                // Secuenciación: usa conectores de orden
-                if (/primero|luego|después|al final|antes de|una vez que|tras|finalmente|en ese punto|en ese momento/.test(lower)) score += 30;
-
-                // Referencia a un paso específico
-                if (/en la parte de|en el punto|en ese paso|en esa etapa|ahí fue cuando|fue entonces|en ese momento específico/.test(lower)) score += 35;
-
-                // Mencionan producto concreto del proceso
-                if (/el resultado|el output|lo que produje|lo que entregué|el documento|el código|la fórmula|la respuesta|el cálculo|la tarea|el reporte/.test(lower)) score += 35;
-
-                return Math.min(100, score);
-            },
-
-            /**
-             * Evalúa el conjunto de respuestas de la sesión.
-             * Devuelve el perfil estadístico completo.
-             */
-            computeSessionProfile(metricsMap) {
-                const entries = Object.values(metricsMap);
-                if (entries.length === 0) return null;
-
-                const extract = key => entries.map(e => e[key] || 0);
-
-                const complexity    = extract('complexityScore');
-                const abstraction   = extract('abstractionScore');
-                const selfReg       = extract('selfRegulationScore');
-                const procLocation  = extract('processLocationScore');
-                const latencies     = extract('latencia');
-                const wordCounts    = extract('numPalabras');
-
-                return {
-                    // Promedios
-                    avgComplexity:       avg(complexity),
-                    avgAbstraction:      avg(abstraction),
-                    avgSelfRegulation:   avg(selfReg),
-                    avgProcessLocation:  avg(procLocation),
-                    avgLatencia:         avg(latencies),
-                    avgPalabras:         avg(wordCounts),
-
-                    // Tendencia: ¿mejora con el tiempo?
-                    complexityTrend:     linearTrend(complexity),
-                    abstractionTrend:    linearTrend(abstraction),
-
-                    // Dispersión (desviación estándar) — coherencia entre respuestas
-                    stdComplexity:       std(complexity),
-                    stdAbstraction:      std(abstraction),
-
-                    // Score compuesto de metacognición (ponderado)
-                    metacognitionIndex:  Math.round(
-                        avg(complexity)   * 0.20 +
-                        avg(abstraction)  * 0.35 +
-                        avg(selfReg)      * 0.25 +
-                        avg(procLocation) * 0.20
-                    )
-                };
-            }
-        };
-
-        // Utilidades estadísticas
-        function avg(arr)  { return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0; }
-        function std(arr)  {
-            if (arr.length < 2) return 0;
-            const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-            return Math.round(Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / arr.length));
+// ── VISUALIZACIÓN ESPACIAL ───────────────────────────────
+const SpaceViz = {
+    stars: [],
+    init() {
+        const c = document.getElementById('spaceCanvas');
+        c.width  = window.innerWidth;
+        c.height = window.innerHeight;
+        for (let i = 0; i < 180; i++) {
+            this.stars.push({
+                x:  Math.random() * c.width,
+                y:  Math.random() * c.height,
+                r:  Math.random() * 1.2 + 0.2,
+                op: Math.random() * 0.5 + 0.1,
+                speed: Math.random() * 0.15 + 0.02
+            });
         }
-        function linearTrend(arr) {
-            // Pendiente de mínimos cuadrados: positiva = mejora, negativa = declive
-            if (arr.length < 2) return 0;
-            const n = arr.length;
-            const xs = arr.map((_, i) => i);
-            const sumX  = xs.reduce((a, b) => a + b, 0);
-            const sumY  = arr.reduce((a, b) => a + b, 0);
-            const sumXY = xs.reduce((s, x, i) => s + x * arr[i], 0);
-            const sumX2 = xs.reduce((s, x) => s + x * x, 0);
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            return Math.round(slope * 100) / 100;
+        window.addEventListener('resize', () => {
+            c.width  = window.innerWidth;
+            c.height = window.innerHeight;
+        });
+        this.loop();
+    },
+    loop() {
+        const c   = document.getElementById('spaceCanvas');
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // Gradiente nebulosa de fondo
+        const g = ctx.createRadialGradient(c.width*0.5, c.height*0.4, 0, c.width*0.5, c.height*0.4, c.width*0.7);
+        g.addColorStop(0,   'rgba(26,26,62,0.25)');
+        g.addColorStop(0.5, 'rgba(13,13,26,0.15)');
+        g.addColorStop(1,   'rgba(5,5,8,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, c.width, c.height);
+
+        // Estrellas con drift lento
+        this.stars.forEach(s => {
+            s.y -= s.speed;
+            if (s.y < 0) { s.y = c.height; s.x = Math.random() * c.width; }
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(200,200,255,${s.op})`;
+            ctx.fill();
+        });
+
+        requestAnimationFrame(() => this.loop());
+    }
+};
+
+// ── WAVEFORM ─────────────────────────────────────────────
+const WaveViz = {
+    analyser: null,
+    dataArray: null,
+    animId: null,
+    mode: 'idle',  // idle | speaking | listening
+
+    async connectToAudio(audioElement) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const src = ctx.createMediaElementSource(audioElement);
+            this.analyser = ctx.createAnalyser();
+            this.analyser.fftSize = 256;
+            src.connect(this.analyser);
+            this.analyser.connect(ctx.destination);
+            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        } catch(e) {
+            console.warn('WaveViz audio connect failed:', e);
+        }
+    },
+
+    async connectToStream(stream) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const src = ctx.createMediaStreamSource(stream);
+            this.analyser = ctx.createAnalyser();
+            this.analyser.fftSize = 256;
+            src.connect(this.analyser);
+            // No conectamos al destination para no retroalimentar
+            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        } catch(e) {
+            console.warn('WaveViz stream connect failed:', e);
+        }
+    },
+
+    draw(mode) {
+        this.mode = mode;
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this._frame();
+    },
+
+    stop() {
+        this.mode = 'idle';
+        if (this.animId) cancelAnimationFrame(this.animId);
+        this.animId = null;
+        this._drawIdle();
+    },
+
+    _frame() {
+        const canvas = document.getElementById('waveCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width  = canvas.offsetWidth  * window.devicePixelRatio;
+        canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const W = canvas.offsetWidth;
+        const H = canvas.offsetHeight;
+
+        ctx.clearRect(0, 0, W, H);
+
+        if (this.mode === 'idle') {
+            this._drawLine(ctx, W, H, 'rgba(108,99,255,0.2)', null);
+        } else if (this.mode === 'speaking' && this.analyser) {
+            this.analyser.getByteTimeDomainData(this.dataArray);
+            this._drawLine(ctx, W, H, '#6c63ff', this.dataArray);
+        } else if (this.mode === 'listening' && this.analyser) {
+            this.analyser.getByteTimeDomainData(this.dataArray);
+            this._drawLine(ctx, W, H, '#39ff85', this.dataArray);
+        } else if (this.mode === 'speaking') {
+            // Sine simulado cuando no hay analyser
+            this._drawSine(ctx, W, H, '#6c63ff');
+        } else if (this.mode === 'listening') {
+            this._drawSine(ctx, W, H, '#39ff85');
         }
 
-        // =====================================================
-        // PERSISTENCIA
-        // =====================================================
-        function saveSessionState() {
-            const sessionData = {
-                userId:    state.userId,
-                userName:  state.userName,
-                userEmail: state.userEmail,
-                sessionId: state.sessionId,
-                turno:     state.turno,
-                fase:      state.fase,
-                respuestas: state.respuestas,
-                indicators: state.indicators,
-                startTime:  state.startTime,
-                metrics:    state.metrics,
-                rephraseCount: state.rephraseCount,
-                lastQuestionIndex: state.lastQuestionIndex,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(`flavell-session-${state.sessionId}`, JSON.stringify(sessionData));
-            console.log('💾 Sesión guardada:', state.sessionId);
+        if (this.mode !== 'idle') {
+            this.animId = requestAnimationFrame(() => this._frame());
+        }
+    },
+
+    _drawLine(ctx, W, H, color, data) {
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur  = 8;
+        ctx.beginPath();
+        const mid = H / 2;
+
+        if (!data) {
+            ctx.moveTo(0, mid);
+            ctx.lineTo(W, mid);
+        } else {
+            const sliceW = W / data.length;
+            data.forEach((v, i) => {
+                const y = (v / 128.0) * mid;
+                i === 0 ? ctx.moveTo(0, y) : ctx.lineTo(i * sliceW, y);
+            });
+        }
+        ctx.stroke();
+    },
+
+    _drawSine(ctx, W, H, color) {
+        const t = Date.now() / 400;
+        ctx.lineWidth   = 1.5;
+        ctx.strokeStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur  = 8;
+        ctx.beginPath();
+        for (let x = 0; x < W; x++) {
+            const y = H/2 + Math.sin((x/W)*Math.PI*4 + t) * (H*0.25);
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    },
+
+    _drawIdle(ctx, W, H) {
+        const canvas = document.getElementById('waveCanvas');
+        if (!canvas) return;
+        const c = canvas.getContext('2d');
+        canvas.width  = canvas.offsetWidth  * window.devicePixelRatio;
+        canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+        c.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const w = canvas.offsetWidth, h = canvas.offsetHeight;
+        c.clearRect(0,0,w,h);
+        this._drawLine(c, w, h, 'rgba(108,99,255,0.2)', null);
+    }
+};
+
+// ── PERSISTENCIA ─────────────────────────────────────────
+function saveSessionState() {
+    const data = {
+        userId: state.userId, userName: state.userName, userEmail: state.userEmail,
+        sessionId: state.sessionId, turno: state.turno, fase: state.fase,
+        conversationHistory: state.conversationHistory,
+        respuestas: state.respuestas, indicators: state.indicators,
+        startTime: state.startTime, metrics: state.metrics,
+        rephraseCount: state.rephraseCount, lastQuestionIndex: state.lastQuestionIndex,
+        timestamp: Date.now()
+    };
+    localStorage.setItem(`flavell-session-${state.sessionId}`, JSON.stringify(data));
+}
+
+function checkSessionRecovery(userId) {
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('flavell-session-')) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data.userId === userId && !data.sessionClosed && data.turno > 1) {
+                if ((Date.now() - data.timestamp) < 7200000) return data;
+            }
+        }
+    }
+    return null;
+}
+
+// ── GOOGLE AUTH ──────────────────────────────────────────
+function initGoogleAuth() {
+    if (typeof google === 'undefined' || !google.accounts) {
+        setTimeout(initGoogleAuth, 500); return;
+    }
+    google.accounts.id.initialize({
+        client_id: CONFIG.GOOGLE_CLIENT_ID,
+        callback: handleGoogleLogin
+    });
+    google.accounts.id.renderButton(
+        document.getElementById('google-signin-button'),
+        { theme: 'outline', size: 'large', text: 'signin_with' }
+    );
+}
+
+async function handleGoogleLogin(response) {
+    const base64 = response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const userData = JSON.parse(decodeURIComponent(
+        atob(base64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    ));
+    state.userId    = userData.sub;
+    state.userName  = userData.name;
+    state.userEmail = userData.email;
+
+    // Recuperar historial de sesiones previas del Sheet
+    try {
+        const r = await fetch(`${CONFIG.SHEETS_READ}?token=flavell-mira-token-2024&userId=${state.userId}`);
+        const d = await r.json();
+        if (d.success) state.sessionContext = d;
+    } catch(e) { console.warn('Sin historial previo:', e); }
+
+    const recovered = checkSessionRecovery(state.userId);
+    if (recovered && recovered.turno > 1) showRecoveryOption(recovered);
+    else startNewSession();
+}
+
+function showRecoveryOption(recovered) {
+    const msg = document.getElementById('recoveryMessage');
+    msg.textContent = `Tienes una sesión sin terminar (${recovered.turno} turnos). ¿Continúas?`;
+    msg.classList.remove('hidden');
+    const btns = document.getElementById('recoveryButtons');
+    btns.innerHTML = `
+        <button class="btn-continue" onclick="continueSession()">Continuar</button>
+        <button class="btn-restart"  onclick="startNewSession()">Nueva sesión</button>`;
+    btns.classList.remove('hidden');
+}
+
+function continueSession() {
+    const recovered = checkSessionRecovery(state.userId);
+    if (!recovered) return;
+    Object.assign(state, {
+        sessionId: recovered.sessionId, turno: recovered.turno, fase: recovered.fase,
+        conversationHistory: recovered.conversationHistory || [],
+        respuestas: recovered.respuestas, indicators: recovered.indicators,
+        startTime: recovered.startTime, metrics: recovered.metrics,
+        rephraseCount: recovered.rephraseCount || {},
+        lastQuestionIndex: recovered.lastQuestionIndex || {},
+        lastActivityTime: Date.now()
+    });
+    openApp();
+    continueFromSavedState();
+}
+
+function startNewSession() {
+    Object.assign(state, {
+        sessionId: `${state.userId}-${Date.now()}`,
+        turno: 0, fase: 0,
+        conversationHistory: [],
+        respuestas: [], indicators: [],
+        startTime: Date.now(), metrics: {},
+        rephraseCount: {}, lastQuestionIndex: {},
+        lastActivityTime: Date.now()
+    });
+    openApp();
+    startInterview();
+}
+
+function openApp() {
+    document.getElementById('loginModal').classList.remove('active');
+    document.getElementById('appContainer').classList.remove('hidden');
+    const first = state.userName.split(' ')[0];
+    document.getElementById('userGreeting').textContent = first;
+}
+
+// ── ENTREVISTA ───────────────────────────────────────────
+async function startInterview() {
+    state.turno = 1;
+    state.fase  = 0;
+    state.lastTurnoTime = Date.now();
+    updatePhase('');
+    WaveViz.draw('idle');
+
+    // Primera llamada al modelo — sin historial previo, arranca Fase 0
+    const openingResponse = await callGPT('Inicia la conversación.');
+    if (!openingResponse) return;
+
+    showVigil(openingResponse.text);
+    setMicState('speaking');
+    await speakText(openingResponse.text);
+    setMicState('available');
+    setStatus('Presiona para hablar', 'active');
+
+    logToSheet({
+        turno: state.turno, fase: state.fase,
+        speaker: 'vigil', tipo: 'apertura',
+        texto: openingResponse.text, latencia: 0,
+        ...metaToSheetFields(openingResponse.meta)
+    });
+    saveSessionState();
+}
+
+async function continueFromSavedState() {
+    const msg = 'Retomamos. Cuéntame.';
+    showVigil(msg);
+    setMicState('speaking');
+    await speakText(msg);
+    setMicState('available');
+    setStatus('Presiona para hablar', 'active');
+}
+
+// ── LLAMADA AL MODELO (núcleo conversacional) ─────────────
+async function callGPT(userText) {
+    // Agregar mensaje del usuario al historial
+    if (userText && userText !== 'Inicia la conversación.') {
+        state.conversationHistory.push({ role: 'user', content: userText });
+    }
+
+    try {
+        const res = await fetch(CONFIG.API.GPT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                history: state.conversationHistory,
+                sessionContext: state.sessionContext
+            })
+        });
+        if (!res.ok) throw new Error(`GPT error: ${res.status}`);
+        const data = await res.json();
+
+        // Agregar respuesta del modelo al historial
+        state.conversationHistory.push({ role: 'assistant', content: data.text });
+        state.currentMeta = data.meta;
+
+        // Actualizar fase en UI si el modelo cambió de fase
+        if (data.meta && data.meta.faseActual) {
+            updatePhaseFromMeta(data.meta.faseActual);
+            state.fase = faseToNumber(data.meta.faseActual);
         }
 
-        function checkSessionRecovery(userId) {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('flavell-session-')) {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    if (data.userId === userId && !data.sessionClosed && data.turno > 1) {
-                        if ((Date.now() - data.timestamp) < 7200000) return data;
-                    }
-                }
-            }
-            return null;
-        }
+        return data;
+    } catch(err) {
+        console.error('GPT error:', err);
+        return null;
+    }
+}
 
-        // =====================================================
-        // GOOGLE AUTH
-        // =====================================================
-        function initGoogleAuth() {
-            if (typeof google === 'undefined' || !google.accounts) {
-                setTimeout(initGoogleAuth, 500);
-                return;
-            }
+function faseToNumber(faseStr) {
+    const map = { fase0: 0, planeacion: 1, monitoreo: 2, evaluacion: 3, adaptacion: 4, cierre: 5 };
+    return map[faseStr] || 0;
+}
+
+function updatePhaseFromMeta(faseStr) {
+    const labels = {
+        fase0: '', planeacion: 'Planificación',
+        monitoreo: 'Monitoreo', evaluacion: 'Evaluación',
+        adaptacion: 'Adaptación', cierre: ''
+    };
+    updatePhase(labels[faseStr] || '');
+}
+
+function metaToSheetFields(meta) {
+    if (!meta) return {};
+    return {
+        tipoProducto:        meta.tipoProducto        || '',
+        proyectoId:          meta.proyectoId           || '',
+        usoIA:               meta.usoIA                || '',
+        faseZimmerman:       meta.faseActual           || '',
+        tecnicaUsada:        meta.tecnicaUsada         || '',
+        criterioSuficiencia: meta.criterioSuficiencia,
+        esCierre:            meta.esCierre
+    };
+}
+
+// ── GRABACIÓN ────────────────────────────────────────────
+async function startRecording() {
+    if (state.sessionClosed || state.isSpeaking) return;
+    try {
+        state.lastTurnoTime = Date.now();
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 }
+        });
+        state.activeStream = stream;
+
+        // Conectar waveform al stream del mic
+        await WaveViz.connectToStream(stream);
+        WaveViz.draw('listening');
+
+        state.mediaRecorder = new MediaRecorder(stream);
+        state.audioChunks = [];
+        state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
+        state.mediaRecorder.onstop = processAudio;
+        state.mediaRecorder.start();
+        state.isRecording = true;
+        setMicState('listening');
+        setStatus('Escuchando...', 'listen');
+    } catch(err) {
+        console.error('Mic error:', err);
+        setStatus('Error de micrófono', '');
+    }
+}
+
+function stopRecording() {
+    if (state.mediaRecorder && state.isRecording) {
+        state.mediaRecorder.stop();
+        state.isRecording = false;
+        if (state.activeStream) {
+            state.activeStream.getTracks().forEach(t => t.stop());
+            state.activeStream = null;
+        }
+        WaveViz.stop();
+        setMicState('processing');
+        setStatus('Procesando...', 'active');
+    }
+}
+
+async function processAudio() {
+    try {
+        const blob   = new Blob(state.audioChunks, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onload = async () => {
             try {
-                google.accounts.id.initialize({
-                    client_id: CONFIG.GOOGLE_CLIENT_ID,
-                    callback: handleGoogleLogin
+                const audioBase64 = reader.result.split(',')[1];
+                const res  = await fetch(CONFIG.API.WHISPER, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ audio: audioBase64 })
                 });
-                google.accounts.id.renderButton(
-                    document.getElementById('google-signin-button'),
-                    { theme: 'outline', size: 'large', text: 'signin_with' }
-                );
-            } catch (error) {
-                console.error('❌ Error Google Auth:', error);
-            }
-        }
+                if (!res.ok) throw new Error(`Whisper: ${res.status}`);
+                const { text: userText = '' } = await res.json();
 
-        function handleGoogleLogin(response) {
-            try {
-                const base64 = response.credential.split('.')[1]
-                    .replace(/-/g, '+').replace(/_/g, '/');
-                const userData = JSON.parse(decodeURIComponent(
-                    atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-                ));
-                state.userId    = userData.sub;
-                state.userName  = userData.name;
-                state.userEmail = userData.email;
-
-                const recovered = checkSessionRecovery(state.userId);
-                if (recovered && recovered.turno > 1) {
-                    showRecoveryOption(recovered);
-                } else {
-                    startNewSession();
+                if (!userText.trim() || userText.length < 3) {
+                    setStatus('No se capturó audio', '');
+                    setMicState('available');
+                    return;
                 }
-            } catch (error) {
-                console.error('❌ Login error:', error);
-            }
-        }
 
-        function showRecoveryOption(recovered) {
-            const msg = document.getElementById('recoveryMessage');
-            msg.textContent = `Encontramos una sesión anterior en Fase ${recovered.fase} con ${recovered.turno} turnos. ¿Deseas continuar?`;
-            msg.classList.remove('hidden');
-            const buttons = document.getElementById('recoveryButtons');
-            buttons.innerHTML = `
-                <button class="btn-continue" onclick="continueSession()">Continuar Sesión</button>
-                <button class="btn-restart" onclick="startNewSession()">Iniciar Nueva</button>
-            `;
-            buttons.classList.remove('hidden');
-        }
+                // Métricas
+                const latencia             = Date.now() - state.lastTurnoTime;
+                const numPalabras          = userText.trim().split(/\s+/).length;
+                const longitud             = userText.length;
+                const elaboracion          = numPalabras < 5 ? 'breve' : numPalabras < CONFIG.MIN_WORDS_ELABORATED ? 'moderada' : 'elaborada';
+                const complexityScore      = MetricEngine.computeComplexityScore(userText);
+                const abstractionScore     = MetricEngine.computeAbstractionScore(userText);
+                const selfRegulationScore  = MetricEngine.computeSelfRegulationScore(userText);
+                const processLocationScore = MetricEngine.computeProcessLocationScore(userText);
 
-        function continueSession() {
-            const recovered = checkSessionRecovery(state.userId);
-            if (!recovered) return;
-            Object.assign(state, {
-                sessionId:         recovered.sessionId,
-                turno:             recovered.turno,
-                fase:              recovered.fase,
-                respuestas:        recovered.respuestas,
-                indicators:        recovered.indicators,
-                startTime:         recovered.startTime,
-                metrics:           recovered.metrics,
-                rephraseCount:     recovered.rephraseCount || {},
-                lastQuestionIndex: recovered.lastQuestionIndex || {},
-                lastActivityTime:  Date.now()
-            });
-            openApp();
-            logToSheet({ tipo: 'recuperacion', texto: `Sesión recuperada en Fase ${state.fase}, turno ${state.turno}`, estadoSesion: 'recuperada' });
-            continueFromPhase();
-        }
+                state.metrics[state.turno] = { latencia, longitud, numPalabras, elaboracion, complexityScore, abstractionScore, selfRegulationScore, processLocationScore };
 
-        function startNewSession() {
-            Object.assign(state, {
-                sessionId:         `${state.userId}-${Date.now()}`,
-                turno:             0,
-                fase:              1,
-                respuestas:        [],
-                indicators:        [],
-                startTime:         Date.now(),
-                metrics:           {},
-                rephraseCount:     {},
-                lastQuestionIndex: {},
-                lastActivityTime:  Date.now()
-            });
-            openApp();
-            startInterview();
-        }
+                showStudent(userText);
+                state.respuestas.push(userText);
 
-        function openApp() {
-            document.getElementById('loginModal').classList.remove('active');
-            document.getElementById('appContainer').classList.remove('hidden');
-            document.getElementById('userGreeting').textContent = state.userName.split(' ')[0];
-        }
+                // Log respuesta del estudiante
+                logToSheet({
+                    turno: state.turno, fase: state.fase,
+                    speaker: 'student', tipo: 'respuesta',
+                    texto: userText, latencia, longitudRespuesta: longitud,
+                    numPalabras, elaboracion, complexityScore, abstractionScore,
+                    selfRegulationScore, processLocationScore
+                });
 
-        // =====================================================
-        // FLUJO DE ENTREVISTA
-        // =====================================================
-        async function startInterview() {
-            state.turno = 1;
-            state.fase  = 1;
-            state.lastTurnoTime = Date.now();
-            updateStatus('Iniciando...', 'active');
-            updateProgress();
-            showMiraText(VIGIL.apertura);
-            setMicState('speaking');
-            await speakText(VIGIL.apertura);
-            setMicState('available');
-            updateStatus('Presiona para hablar', 'active');
+                state.turno++;
+                state.lastActivityTime = Date.now();
+                saveSessionState();
 
-            logToSheet({
-                turno: state.turno, fase: state.fase,
-                speaker: 'vigil', tipo: 'apertura',
-                texto: VIGIL.apertura, latencia: 0, elaboracion: 'N/A'
-            });
-            saveSessionState();
-        }
-
-        async function continueFromPhase() {
-            updateStatus('Sesión recuperada', 'success');
-            updateProgress();
-            const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
-            const msg = `Retomamos donde nos quedamos. Estamos en Fase ${state.fase}: ${labels[state.fase]}. Adelante.`;
-            showMiraText(msg);
-            setMicState('speaking');
-            await speakText(msg);
-            state.turno++;
-            await askNextQuestion();
-        }
-
-        // =====================================================
-        // DETECCIÓN DE FASE
-        // =====================================================
-        function detectPhase(text) {
-            const lower = text.toLowerCase();
-            if (/terminé|acabé|finalizé|completé|aprendí|descubrí|entendí|me di cuenta|resultó|funcionó|no funcionó|conclusión|resultado|logré|conseguí|dominé|comprendí|asimilé|reflexiono|pensé|analice|evalúe|consideré|mejoraría|cambiaría|siguiente vez|próxima|error|equivocación|reto|desafío/.test(lower)) return 3;
-            if (/empecé|estoy|hice|haciendo|leyendo|escribiendo|resolviendo|calculando|analizando|buscando|investigando|encontré|revisando|checando|probando|intentando|aplicando|usando|ejecutando|realizando|desarrollando|construyendo|creando|practique|trabaje|intente|realice|desarrollo|construyo|cree/.test(lower)) return 2;
-            return 1;
-        }
-
-        // =====================================================
-        // DETECCIÓN DE INDICADORES METACOGNITIVOS
-        // =====================================================
-        function detectIndicators(text) {
-            const lower = text.toLowerCase();
-            const detected = [];
-
-            // Atribución interna: el estudiante se reconoce como agente
-            if (/decidí|elegí|cambié mi estrategia|me di cuenta|aprendí|entendí|logré|conseguí|hice diferente|fue porque|decidí que|cambié de|mejoré mi/.test(lower))
-                detected.push('atribución_interna');
-
-            // Inferencia adaptativa: proyecta mejora futura con procedimiento concreto
-            if (/próxima vez|siguiente|haría diferente|cambiaría|mejoraría|si lo repito|para la próxima|específicamente|primero|después/.test(lower))
-                detected.push('inferencia_adaptativa');
-
-            // Síntesis propia: respuesta suficientemente elaborada
-            if (text.length > 50 && text.split(' ').length > 10)
-                detected.push('síntesis_propia');
-
-            // Bordes precisos: distingue qué sabe y qué no con precisión
-            if (/entendí bien|no me quedó clara|en la parte de|pero todavía|claramente|específicamente|esto sí|esto no/.test(lower))
-                detected.push('bordes_precisos');
-
-            // Ubicación de proceso: sabe exactamente dónde estaba
-            if (/primero|luego|después|al final|en ese paso|en esa etapa|fue entonces|en ese momento/.test(lower))
-                detected.push('ubicación_proceso');
-
-            // Autorregulación demostrada: ajustó su proceso activamente
-            if (/revisé|checé|verifiqué|cambié|ajusté|modifiqué|adapté|corregí|volví a intentar|rehíce/.test(lower))
-                detected.push('autorregulación_demostrada');
-
-            return detected;
-        }
-
-        // =====================================================
-        // CLASIFICACIÓN DE ELABORACIÓN
-        // =====================================================
-        function classifyElaboration(text) {
-            const words = text.trim().split(/\s+/).length;
-            if (words < 5)  return 'breve';
-            if (words < CONFIG.MIN_WORDS_ELABORATED) return 'moderada';
-            return 'elaborada';
-        }
-
-        // =====================================================
-        // CIERRE DE SESIÓN
-        // =====================================================
-        function shouldClose() {
-            if (state.respuestas.length < CONFIG.MIN_RESPONSES_TO_CLOSE) return false;
-            return state.indicators.length >= CONFIG.MIN_INDICATORS_TO_CLOSE;
-        }
-
-        // =====================================================
-        // GRABACIÓN Y PROCESAMIENTO DE AUDIO
-        // =====================================================
-        async function startRecording() {
-            if (state.sessionClosed || state.isSpeaking) return;
-            try {
-                state.lastTurnoTime = Date.now();
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                state.mediaRecorder = new MediaRecorder(stream);
-                state.audioChunks = [];
-                state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
-                state.mediaRecorder.onstop = processAudio;
-                state.mediaRecorder.start();
-                state.isRecording = true;
-                setMicState('recording');
-                updateStatus('Hablando...', 'active');
-            } catch (err) {
-                console.error('Mic error:', err);
-                updateStatus('Error micrófono', 'error');
-            }
-        }
-
-        function stopRecording() {
-            if (state.mediaRecorder && state.isRecording) {
-                state.mediaRecorder.stop();
-                state.isRecording = false;
+                // Llamar al modelo con el texto del estudiante
+                setStatus('Vigil piensa...', 'active');
                 setMicState('processing');
-                updateStatus('Procesando...', 'active');
-            }
-        }
+                showTyping();
 
-        async function processAudio() {
-            try {
-                const blob   = new Blob(state.audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-
-                reader.onload = async () => {
-                    try {
-                        const audioBase64 = reader.result.split(',')[1];
-                        const res  = await fetch(CONFIG.API.WHISPER, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ audio: audioBase64 })
-                        });
-
-                        if (!res.ok) throw new Error(`Whisper error: ${res.status}`);
-                        const { text: userText = '' } = await res.json();
-
-                        if (!userText.trim() || userText.length < 3) {
-                            updateStatus('No se capturó audio. Intenta de nuevo.', 'error');
-                            setMicState('available');
-                            return;
-                        }
-
-                        // ---- CÁLCULO DE MÉTRICAS COMPLETAS ----
-                        const latencia    = Date.now() - state.lastTurnoTime;
-                        const numPalabras = userText.trim().split(/\s+/).length;
-                        const longitud    = userText.length;
-                        const elaboracion = classifyElaboration(userText);
-
-                        // Scores estadísticos (Motor Flavell)
-                        const complexityScore    = MetricEngine.computeComplexityScore(userText);
-                        const abstractionScore   = MetricEngine.computeAbstractionScore(userText);
-                        const selfRegulationScore= MetricEngine.computeSelfRegulationScore(userText);
-                        const processLocationScore=MetricEngine.computeProcessLocationScore(userText);
-
-                        state.metrics[state.turno] = {
-                            latencia, longitud, numPalabras, elaboracion,
-                            complexityScore, abstractionScore,
-                            selfRegulationScore, processLocationScore
-                        };
-
-                        console.log(`📊 Turno ${state.turno} métricas:`, state.metrics[state.turno]);
-
-                        // ---- MOSTRAR RESPUESTA DEL ESTUDIANTE ----
-                        showStudentText(userText);
-                        state.respuestas.push(userText);
-
-                        logToSheet({
-                            turno: state.turno, fase: state.fase,
-                            speaker: 'student', tipo: 'respuesta',
-                            texto: userText,
-                            latencia, longitudRespuesta: longitud, numPalabras, elaboracion,
-                            complexityScore, abstractionScore,
-                            selfRegulationScore, processLocationScore
-                        });
-
-                        // ---- DETECCIÓN DE FASE E INDICADORES ----
-                        const newPhase = detectPhase(userText);
-                        if (newPhase !== state.fase) { state.fase = newPhase; updatePhase(newPhase); }
-
-                        const newIndicators = detectIndicators(userText);
-                        state.indicators.push(...newIndicators);
-
-                        state.turno++;
-                        state.lastActivityTime = Date.now();
-                        updateProgress();
-                        saveSessionState();
-
-                        // ---- ¿REPLANTEAMIENTO O SIGUIENTE PREGUNTA? ----
-                        if (elaboracion === 'breve') {
-                            await askRephrasedQuestion();
-                        } else if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
-                            await closeSession();
-                        } else {
-                            await askNextQuestion();
-                        }
-
-                    } catch (err) {
-                        console.error('Processing error:', err);
-                        updateStatus('Error procesando', 'error');
-                        setMicState('available');
-                    }
-                };
-
-                reader.readAsDataURL(blob);
-            } catch (err) {
-                console.error('Audio error:', err);
-                updateStatus('Error de audio', 'error');
-                setMicState('available');
-            }
-        }
-
-        // =====================================================
-        // PREGUNTAR — Siguiente pregunta en turno
-        // =====================================================
-        async function askNextQuestion() {
-            updateStatus('Vigil reflexiona...', 'active');
-            showTyping();
-            setMicState('processing');
-
-            try {
-                const phaseQuestions = VIGIL.preguntas[state.fase];
-                // Guardar el índice de la última pregunta para no repetir antes de tiempo
-                const currentIdx = state.lastQuestionIndex[state.fase] !== undefined
-                    ? (state.lastQuestionIndex[state.fase] + 1) % phaseQuestions.length
-                    : 0;
-                state.lastQuestionIndex[state.fase] = currentIdx;
-
-                const question = phaseQuestions[currentIdx];
+                const gptResponse = await callGPT(userText);
                 hideTyping();
+
+                if (!gptResponse) {
+                    setStatus('Error de conexión', '');
+                    setMicState('available');
+                    return;
+                }
+
+                // Si el modelo indica cierre
+                if (gptResponse.meta && gptResponse.meta.esCierre) {
+                    await closeSession(gptResponse.text, gptResponse.meta);
+                    return;
+                }
+
                 clearDialogue();
-                showMiraText(question);
+                showVigil(gptResponse.text);
                 setMicState('speaking');
-                await speakText(question);
+                WaveViz.draw('speaking');
+                await speakText(gptResponse.text);
+                WaveViz.stop();
 
                 logToSheet({
                     turno: state.turno, fase: state.fase,
                     speaker: 'vigil', tipo: 'pregunta',
-                    texto: question, latencia: 0, elaboracion: 'N/A'
+                    texto: gptResponse.text, latencia: 0,
+                    ...metaToSheetFields(gptResponse.meta)
                 });
 
                 setMicState('available');
-                updateStatus('Presiona para hablar', 'active');
+                setStatus('Presiona para hablar', 'active');
                 saveSessionState();
 
-            } catch (err) {
-                console.error('Question error:', err);
-                updateStatus('Error', 'error');
+            } catch(err) {
+                console.error('Process error:', err);
+                setStatus('Error procesando', '');
                 setMicState('available');
             }
-        }
+        };
+        reader.readAsDataURL(blob);
+    } catch(err) {
+        console.error('Audio error:', err);
+        setMicState('available');
+    }
+}
 
-        // =====================================================
-        // REPLANTEAMIENTO — Cuando la respuesta es breve/vaga
-        // =====================================================
-        async function askRephrasedQuestion() {
-            updateStatus('Vigil insiste...', 'active');
-            showTyping();
-            setMicState('processing');
+// ── CIERRE ───────────────────────────────────────────────
+async function closeSession(closeText, meta) {
+    state.sessionClosed = true;
+    setMicState('closed');
 
-            // Llevar conteo de replanteamientos para no ciclar
-            const key = `${state.fase}-${state.turno}`;
-            state.rephraseCount[key] = (state.rephraseCount[key] || 0) + 1;
+    clearDialogue();
+    showVigil(closeText);
+    setStatus('Sesión completada', 'done');
+    WaveViz.draw('speaking');
+    await speakText(closeText);
+    WaveViz.stop();
 
-            // Si ya se replanteó 2 veces, pasar a la siguiente pregunta
-            if (state.rephraseCount[key] > 2) {
-                hideTyping();
-                await askNextQuestion();
-                return;
-            }
+    const profile = MetricEngine.computeSessionProfile(state.metrics);
 
-            const rephrases = VIGIL.replanteamientos[state.fase];
-            const idx = (state.rephraseCount[key] - 1) % rephrases.length;
-            const rephrase = rephrases[idx];
+    await logToSheet({
+        turno: state.turno, fase: state.fase,
+        speaker: 'vigil', tipo: 'cierre',
+        texto: closeText,
+        indicadoresDetectados: state.indicators.join('|'),
+        estadoSesion: 'completada',
+        ...metaToSheetFields(meta),
+        metacognitionIndex:  profile?.metacognitionIndex  || 0,
+        avgComplexity:       profile?.avgComplexity        || 0,
+        avgAbstraction:      profile?.avgAbstraction       || 0,
+        avgSelfRegulation:   profile?.avgSelfRegulation    || 0,
+        avgProcessLocation:  profile?.avgProcessLocation   || 0,
+        complexityTrend:     profile?.complexityTrend      || 0,
+        abstractionTrend:    profile?.abstractionTrend     || 0
+    });
 
-            hideTyping();
-            clearDialogue();
-            showMiraText(rephrase);
-            setMicState('speaking');
-            await speakText(rephrase);
+    localStorage.removeItem(`flavell-session-${state.sessionId}`);
+    setTimeout(() => downloadSessionReport(), 1500);
+}
 
-            logToSheet({
-                turno: state.turno, fase: state.fase,
-                speaker: 'vigil', tipo: 'replanteamiento',
-                texto: rephrase, latencia: 0, elaboracion: 'N/A'
-            });
+// ── TTS ──────────────────────────────────────────────────
+async function speakText(text) {
+    state.isSpeaking = true;
+    try {
+        const res = await fetch(CONFIG.API.TTS, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, voice: CONFIG.TTS_VOICE, speed: CONFIG.TTS_SPEED })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
 
-            setMicState('available');
-            updateStatus('Presiona para hablar', 'active');
-            saveSessionState();
-        }
+        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
 
-        // =====================================================
-        // CIERRE DE SESIÓN
-        // =====================================================
-        async function closeSession() {
-            state.sessionClosed = true;
-            setMicState('closed');
+        // Conectar waveform al audio del TTS
+        await WaveViz.connectToAudio(audio);
 
-            let closeMsg = VIGIL.cierres.exitoso;
-            if (state.indicators.length === 0) closeMsg = VIGIL.cierres.frustrado;
-            else if (state.indicators.length === 1) closeMsg = VIGIL.cierres.incompleto;
+        return new Promise(resolve => {
+            const timeout = setTimeout(() => { state.isSpeaking = false; resolve(); }, CONFIG.TTS_TIMEOUT);
+            const done = () => { clearTimeout(timeout); state.isSpeaking = false; resolve(); };
+            audio.onended = done;
+            audio.onerror = done;
+            audio.play().catch(done);
+        });
+    } catch(err) {
+        console.error('TTS error:', err);
+        state.isSpeaking = false;
+    }
+}
 
-            clearDialogue();
-            showMiraText(closeMsg);
-            setMicState('speaking');
-            updateStatus('Sesión completada ✓', 'success');
-            await speakText(closeMsg);
+// ── LOG SHEET ────────────────────────────────────────────
+async function logToSheet(data) {
+    try {
+        const payload = {
+            userId: state.userId, sessionId: state.sessionId,
+            userEmail: state.userEmail, userName: state.userName,
+            turno: data.turno || '', fase: data.fase || '',
+            speaker: data.speaker || '', tipo: data.tipo || '',
+            texto: data.texto || '', latencia: data.latencia || '',
+            longitudRespuesta: data.longitudRespuesta || '',
+            numPalabras: data.numPalabras || '', elaboracion: data.elaboracion || '',
+            indicadoresDetectados: data.indicadoresDetectados || '',
+            estadoSesion: data.estadoSesion || 'en_progreso',
+            tipoProducto: data.tipoProducto || '', proyectoId: data.proyectoId || '',
+            usoIA: data.usoIA || '', faseZimmerman: data.faseZimmerman || '',
+            tecnicaUsada: data.tecnicaUsada || '',
+            criterioSuficiencia: data.criterioSuficiencia !== undefined ? String(data.criterioSuficiencia) : '',
+            esCierre: data.esCierre !== undefined ? String(data.esCierre) : '',
+            complexityScore: data.complexityScore || '', abstractionScore: data.abstractionScore || '',
+            selfRegulationScore: data.selfRegulationScore || '', processLocationScore: data.processLocationScore || '',
+            metacognitionIndex: data.metacognitionIndex || '',
+            avgComplexity: data.avgComplexity || '', avgAbstraction: data.avgAbstraction || '',
+            avgSelfRegulation: data.avgSelfRegulation || '', avgProcessLocation: data.avgProcessLocation || '',
+            complexityTrend: data.complexityTrend || '', abstractionTrend: data.abstractionTrend || ''
+        };
+        await fetch(CONFIG.SHEETS_WEBHOOK, {
+            method: 'POST', mode: 'no-cors', body: JSON.stringify(payload)
+        });
+    } catch(err) { console.error('Sheet log error:', err); }
+}
 
-            // Perfil estadístico final de la sesión
-            const profile = MetricEngine.computeSessionProfile(state.metrics);
-            console.log('📈 Perfil estadístico de sesión:', profile);
+// ── REPORTE ──────────────────────────────────────────────
+function generateSessionReport() {
+    const BOM = '\uFEFF';
+    const timestamp = new Date().toLocaleString('es-MX');
+    const duration  = Math.round((Date.now() - state.startTime) / 1000);
+    const profile   = MetricEngine.computeSessionProfile(state.metrics);
 
-            try {
-                await logToSheet({
-                    turno: state.turno, fase: state.fase,
-                    speaker: 'vigil', tipo: 'cierre',
-                    texto: closeMsg,
-                    indicadoresDetectados: state.indicators.join('|'),
-                    estadoSesion: 'completada',
-                    // Métricas agregadas de la sesión
-                    metacognitionIndex:  profile?.metacognitionIndex  || 0,
-                    avgComplexity:       profile?.avgComplexity        || 0,
-                    avgAbstraction:      profile?.avgAbstraction       || 0,
-                    avgSelfRegulation:   profile?.avgSelfRegulation    || 0,
-                    avgProcessLocation:  profile?.avgProcessLocation   || 0,
-                    complexityTrend:     profile?.complexityTrend      || 0,
-                    abstractionTrend:    profile?.abstractionTrend     || 0
-                });
-            } catch (err) {
-                console.error('❌ Error registrando cierre:', err);
-            }
+    let r = `# EVALUACIÓN METACOGNITIVA — VIGIL by FLAVELL\n\n`;
+    r += `**Estudiante:** ${state.userName} | **Email:** ${state.userEmail}\n`;
+    r += `**Fecha:** ${timestamp} | **Duración:** ${Math.floor(duration/60)}m ${duration%60}s\n\n---\n\n`;
 
-            localStorage.removeItem(`flavell-session-${state.sessionId}`);
-            saveSessionState();
-            setTimeout(() => downloadSessionReport(), 1000);
-        }
+    if (profile) {
+        r += `## Índice de Metacognición: ${profile.metacognitionIndex}/100\n\n`;
+        r += `| Dimensión | Score | Tendencia |\n|-----------|-------|-----------|\n`;
+        r += `| Complejidad | ${profile.avgComplexity}/100 | ${profile.complexityTrend > 0 ? '↑' : '↓'} |\n`;
+        r += `| Abstracción | ${profile.avgAbstraction}/100 | ${profile.abstractionTrend > 0 ? '↑' : '↓'} |\n`;
+        r += `| Autorregulación | ${profile.avgSelfRegulation}/100 | — |\n`;
+        r += `| Ubicación de proceso | ${profile.avgProcessLocation}/100 | — |\n\n---\n\n`;
+    }
 
-        // =====================================================
-        // TTS
-        // =====================================================
-        async function speakText(text) {
-            state.isSpeaking = true;
-            try {
-                const res  = await fetch(CONFIG.API.TTS, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error);
+    r += `## Diálogo\n\n`;
+    state.conversationHistory.forEach((msg, i) => {
+        const who = msg.role === 'assistant' ? '**Vigil**' : '**Estudiante**';
+        r += `${who}: ${msg.content}\n\n`;
+    });
 
-                const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
-                return new Promise(resolve => {
-                    const timeout = setTimeout(() => { state.isSpeaking = false; resolve(); }, CONFIG.TTS_TIMEOUT);
-                    const done = () => { clearTimeout(timeout); state.isSpeaking = false; resolve(); };
-                    audio.onended = done;
-                    audio.onerror = done;
-                    audio.play().catch(done);
-                });
-            } catch (err) {
-                console.error('TTS error:', err);
-                state.isSpeaking = false;
-            }
-        }
+    return BOM + r;
+}
 
-        // =====================================================
-        // LOG A GOOGLE SHEETS
-        // =====================================================
-        async function logToSheet(data) {
-            try {
-                const payload = {
-                    userId:    state.userId,
-                    sessionId: state.sessionId,
-                    userEmail: state.userEmail,
-                    userName:  state.userName,
-                    turno:     data.turno     || '',
-                    fase:      data.fase      || '',
-                    speaker:   data.speaker   || '',
-                    tipo:      data.tipo      || '',
-                    texto:     data.texto     || '',
-                    latencia:              data.latencia              || '',
-                    longitudRespuesta:     data.longitudRespuesta     || '',
-                    numPalabras:           data.numPalabras           || '',
-                    elaboracion:           data.elaboracion           || '',
-                    // Scores individuales por turno
-                    complexityScore:       data.complexityScore       || '',
-                    abstractionScore:      data.abstractionScore      || '',
-                    selfRegulationScore:   data.selfRegulationScore   || '',
-                    processLocationScore:  data.processLocationScore  || '',
-                    // Métricas agregadas (solo en cierre)
-                    metacognitionIndex:    data.metacognitionIndex    || '',
-                    avgComplexity:         data.avgComplexity         || '',
-                    avgAbstraction:        data.avgAbstraction        || '',
-                    avgSelfRegulation:     data.avgSelfRegulation     || '',
-                    avgProcessLocation:    data.avgProcessLocation    || '',
-                    complexityTrend:       data.complexityTrend       || '',
-                    abstractionTrend:      data.abstractionTrend      || '',
-                    indicadoresDetectados: data.indicadoresDetectados || '',
-                    estadoSesion:          data.estadoSesion          || 'en_progreso'
-                };
+function downloadSessionReport() {
+    const report = generateSessionReport();
+    const blob = new Blob([report], { type: 'text/markdown; charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = `VIGIL-${state.sessionId}.md`;
+    document.body.appendChild(link); link.click();
+    document.body.removeChild(link); URL.revokeObjectURL(url);
+}
 
-                await fetch(CONFIG.SHEETS_WEBHOOK, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
-                });
+// ── UI HELPERS ───────────────────────────────────────────
+function showVigil(text) {
+    const area = document.getElementById('dialogueArea');
+    // Preservar el canvas de waveform
+    const wave = document.getElementById('waveCanvas');
+    area.innerHTML = '';
+    area.appendChild(wave);
+    const div = document.createElement('div');
+    div.className = 'vigil-text';
+    div.textContent = text;
+    area.appendChild(div);
+}
 
-                console.log('✅ Registrado en sheet');
-            } catch (err) {
-                console.error('Log error:', err);
-            }
-        }
+function showStudent(text) {
+    const div = document.createElement('div');
+    div.className = 'student-text';
+    div.textContent = text;
+    document.getElementById('dialogueArea').appendChild(div);
+}
 
-        // =====================================================
-        // REPORTE DE SESIÓN
-        // =====================================================
-        function generateSessionReport() {
-            const BOM = '\uFEFF';
-            const faseLabels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
-            const timestamp  = new Date().toLocaleString('es-MX');
-            const duration   = Math.round((Date.now() - state.startTime) / 1000);
-            const minutes    = Math.floor(duration / 60);
-            const seconds    = duration % 60;
-            const profile    = MetricEngine.computeSessionProfile(state.metrics);
+function showTyping() {
+    const area = document.getElementById('dialogueArea');
+    const existing = document.getElementById('typingDots');
+    if (existing) return;
+    const div = document.createElement('div');
+    div.id = 'typingDots';
+    div.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:12px;';
+    div.innerHTML = [1,2,3].map(i =>
+        `<div style="width:7px;height:7px;border-radius:50%;background:var(--violet);opacity:0.5;animation:typingBounce 1.4s ${(i-1)*0.2}s infinite"></div>`
+    ).join('');
+    area.appendChild(div);
+}
 
-            let report = `# EVALUACIÓN METACOGNITIVA — VIGIL by FLAVELL\n## Sesión de Reflexión Guiada\n\n---\n\n`;
-            report += `## 📋 Información de la Sesión\n\n`;
-            report += `| Campo | Valor |\n|-------|-------|\n`;
-            report += `| **Estudiante** | ${state.userName} |\n`;
-            report += `| **Email** | ${state.userEmail} |\n`;
-            report += `| **Session ID** | \`${state.sessionId}\` |\n`;
-            report += `| **Fecha** | ${timestamp} |\n`;
-            report += `| **Duración** | ${minutes}m ${seconds}s |\n\n---\n\n`;
+function hideTyping() { document.getElementById('typingDots')?.remove(); }
+function clearDialogue() {
+    const wave = document.getElementById('waveCanvas');
+    const area = document.getElementById('dialogueArea');
+    area.innerHTML = '';
+    area.appendChild(wave);
+}
 
-            if (profile) {
-                report += `## 📈 Análisis Estadístico de la Sesión\n\n`;
-                report += `| Métrica | Valor |\n|---------|-------|\n`;
-                report += `| **Índice de Metacognición** | ${profile.metacognitionIndex}/100 |\n`;
-                report += `| **Complejidad Promedio** | ${profile.avgComplexity}/100 |\n`;
-                report += `| **Abstracción Promedio** | ${profile.avgAbstraction}/100 |\n`;
-                report += `| **Autorregulación Promedio** | ${profile.avgSelfRegulation}/100 |\n`;
-                report += `| **Ubicación de Proceso Promedio** | ${profile.avgProcessLocation}/100 |\n`;
-                report += `| **Tendencia Complejidad** | ${profile.complexityTrend > 0 ? '↑' : '↓'} ${profile.complexityTrend} |\n`;
-                report += `| **Tendencia Abstracción** | ${profile.abstractionTrend > 0 ? '↑' : '↓'} ${profile.abstractionTrend} |\n`;
-                report += `| **Latencia Promedio** | ${profile.avgLatencia}ms |\n`;
-                report += `| **Palabras Promedio** | ${profile.avgPalabras} |\n\n---\n\n`;
-            }
+function setMicState(s) {
+    const ring = document.getElementById('micRing');
+    const inner = document.getElementById('micInner');
+    ring.className = `mic-ring ${s}`;
+    const icons = { available:'🎤', listening:'🔴', processing:'⏳', speaking:'🔊', closed:'⛔' };
+    inner.textContent = icons[s] || '🎤';
+    ring.style.pointerEvents = s === 'available' ? 'auto' : 'none';
+    if (s === 'available') {
+        ring.onmousedown  = startRecording;
+        ring.onmouseup    = stopRecording;
+        ring.ontouchstart = e => { e.preventDefault(); startRecording(); };
+        ring.ontouchend   = e => { e.preventDefault(); stopRecording(); };
+    }
+}
 
-            report += `## 💬 Diálogo por Turnos\n\n### Turno 1: Apertura\n**Vigil**: "${VIGIL.apertura}"\n\n`;
+function setStatus(text, type) {
+    const el = document.getElementById('statusLabel');
+    el.textContent = text;
+    el.className = `status-label ${type || ''}`;
+}
 
-            state.respuestas.forEach((respuesta, idx) => {
-                const turno   = idx + 2;
-                const m       = state.metrics[turno] || {};
-                report += `### Turno ${turno}\n\n`;
-                report += `**Estudiante**: "${respuesta}"\n\n`;
-                report += `**Métricas**:\n`;
-                report += `- Latencia: ${m.latencia || '-'}ms\n`;
-                report += `- Palabras: ${m.numPalabras || '-'}\n`;
-                report += `- Elaboración: ${m.elaboracion || '-'}\n`;
-                report += `- Complejidad: ${m.complexityScore || '-'}/100\n`;
-                report += `- Abstracción: ${m.abstractionScore || '-'}/100\n`;
-                report += `- Autorregulación: ${m.selfRegulationScore || '-'}/100\n`;
-                report += `- Ubicación de proceso: ${m.processLocationScore || '-'}/100\n\n---\n\n`;
-            });
+function updatePhase(label) {
+    document.getElementById('phaseIndicator').textContent = label || '';
+}
 
-            report += `## 🔍 Indicadores Detectados\n\n`;
-            report += state.indicators.length > 0
-                ? state.indicators.map(i => `- ${i}`).join('\n')
-                : '- Ninguno';
-            report += `\n\n- **Fase Alcanzada**: ${state.fase} — ${faseLabels[state.fase]}\n`;
-            report += `- **Total Respuestas**: ${state.respuestas.length}\n`;
+// Keyframes para typing dots
+const styleEl = document.createElement('style');
+styleEl.textContent = `@keyframes typingBounce {
+    0%,60%,100% { opacity:0.3; transform:translateY(0); }
+    30%          { opacity:1;   transform:translateY(-6px); }
+}`;
+document.head.appendChild(styleEl);
 
-            return BOM + report;
-        }
-
-        function downloadSessionReport() {
-            const report = generateSessionReport();
-            const blob   = new Blob([report], { type: 'text/markdown; charset=utf-8' });
-            const url    = URL.createObjectURL(blob);
-            const link   = document.createElement('a');
-            link.href     = url;
-            link.download = `VIGIL-Evaluacion-${state.sessionId}.md`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-
-        // =====================================================
-        // UI HELPERS
-        // =====================================================
-        function showMiraText(text) {
-            const area = document.getElementById('dialogueArea');
-            area.innerHTML = '';
-            const div = document.createElement('div');
-            div.className = 'mira-text';
-            div.textContent = text;
-            area.appendChild(div);
-        }
-
-        function showStudentText(text) {
-            const div = document.createElement('div');
-            div.className = 'student-text';
-            div.textContent = text;
-            document.getElementById('dialogueArea').appendChild(div);
-        }
-
-        function showTyping() {
-            const div = document.createElement('div');
-            div.id = 'typingIndicator';
-            div.className = 'typing-dots';
-            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-            document.getElementById('dialogueArea').appendChild(div);
-        }
-
-        function hideTyping()    { document.getElementById('typingIndicator')?.remove(); }
-        function clearDialogue() { document.getElementById('dialogueArea').innerHTML = ''; }
-
-        function updateStatus(text, type = '') {
-            const el = document.getElementById('statusText');
-            el.textContent = text;
-            el.className = `status ${type === 'active' ? 'active' : type === 'error' ? 'warning' : type === 'success' ? 'success' : ''}`;
-        }
-
-        function updatePhase(phase) {
-            const labels = { 1: 'Planificación', 2: 'Ejecución', 3: 'Reflexión' };
-            document.getElementById('phaseIndicator').textContent = `Fase ${phase}: ${labels[phase]}`;
-        }
-
-        function updateProgress() {
-            document.getElementById('progressIndicator').textContent =
-                `Turnos: ${state.turno} | Respuestas: ${state.respuestas.length} | Indicadores: ${state.indicators.length}`;
-        }
-
-        function setMicState(micState) {
-            const btn = document.getElementById('micButton');
-            btn.className = `mic-button ${micState}`;
-            btn.disabled  = micState !== 'available';
-            if (micState === 'available') {
-                btn.onmousedown  = startRecording;
-                btn.onmouseup    = stopRecording;
-                btn.ontouchstart = e => { e.preventDefault(); startRecording(); };
-                btn.ontouchend   = e => { e.preventDefault(); stopRecording(); };
-            }
-        }
-
-        // =====================================================
-        // INIT
-        // =====================================================
-        window.addEventListener('DOMContentLoaded', initGoogleAuth);
-        window.addEventListener('load', initGoogleAuth);
-    </script>
-
+// ── INIT ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    SpaceViz.init();
+    WaveViz._drawIdle();
+    initGoogleAuth();
+});
+window.addEventListener('load', initGoogleAuth);
+</script>
 </body>
 </html>
