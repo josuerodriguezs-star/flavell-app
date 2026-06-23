@@ -41,7 +41,7 @@ export default async function handler(req, res) {
             response = await callTTS(apiKey, 'gpt-4o-mini-tts', {
                 model: 'gpt-4o-mini-tts',
                 input: text,
-                voice: 'nova',
+                voice: 'sage',
                 speed: 0.92,
                 instructions: 'Habla en español con un tono cálido, pausado y conversacional. Evita sonar monótona. Usa inflexión natural y ritmo humano, como si estuvieras teniendo una conversación real con un estudiante universitario. Haz pausas breves y naturales entre ideas.'
             });
@@ -51,8 +51,8 @@ export default async function handler(req, res) {
             response = await callTTS(apiKey, 'tts-1-hd', {
                 model: 'tts-1-hd',
                 input: text,
-                voice: 'nova',
-                speed: 0.92
+                voice: 'sage',
+                speed: 1
             });
         }
 
