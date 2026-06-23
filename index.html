@@ -868,6 +868,16 @@
             state.lastTurnoTime = Date.now();
             updateStatus('Iniciando...', 'active');
             updateProgress();
+
+            // Pre-calentar permiso del mic antes del primer TTS
+            // para que el barge-in no encuentre el diálogo de permisos a mitad del audio
+            try {
+                const warmStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                warmStream.getTracks().forEach(t => t.stop());
+            } catch (e) {
+                console.warn('Permiso de mic no concedido:', e.message);
+            }
+
             showMiraText(VIGIL.apertura);
             setMicState('speaking');
             await speakText(VIGIL.apertura);
@@ -1280,21 +1290,15 @@
                     bargeMonitor = setInterval(() => {
                         bargeAnalyser.getFloatTimeDomainData(bargeBuf);
                         const rms = Math.sqrt(bargeBuf.reduce((s, v) => s + v * v, 0) / bargeBuf.length);
-
-                        // Actualiza barras naranjas con RMS real del TTS (simulado via oscilación)
-                        // y usa el rms del mic para detectar barge-in
-                        _vigilRms = 0.4 + Math.random() * 0.3; // TTS no tiene analyser propio, animación viva
+                        _vigilRms = 0.4 + Math.random() * 0.3;
 
                         if (rms > THRESHOLD) {
                             if (!voiceTimer) {
                                 voiceTimer = setTimeout(() => {
+                                    // Limpiar todo y resolver el Promise correctamente
                                     audio.pause();
-                                    clearInterval(bargeMonitor);
-                                    bargeCtx.close();
-                                    bargeStream.getTracks().forEach(t => t.stop());
-                                    state.isSpeaking = false;
-                                    setVizActive('vigil', false);
-                                    _vigilRms = null;
+                                    cleanup();       // cancela el TTS_TIMEOUT y limpia recursos
+                                    resolve();       // resuelve el Promise para no dejar colgado el await
                                     startRecording();
                                 }, CONFIRM_MS);
                             }
@@ -1530,3 +1534,4 @@
 
 </body>
 </html>
+
