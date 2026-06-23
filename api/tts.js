@@ -22,10 +22,11 @@ export default async function handler(req, res) {
                 'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'tts-1-hd',
+                model: 'gpt-4o-mini-tts',
                 input: text,
                 voice: 'nova',
                 speed: 0.95
+                instructions: 'Habla en español con un tono cálido, pausado y conversacional. Evita sonar monótona. Usa inflexión natural, como si estuvieras teniendo una conversación real con un estudiante universitario.'
             })
         });
 
