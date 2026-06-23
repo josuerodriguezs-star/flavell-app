@@ -52,7 +52,7 @@ export default async function handler(req, res) {
                 model: 'tts-1-hd',
                 input: text,
                 voice: 'sage',
-                speed: 1
+                speed: 1.2
             });
         }
 
