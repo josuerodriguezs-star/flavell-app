@@ -1,4 +1,27 @@
 {
-  "buildCommand": "echo 'Static site'",
-  "outputDirectory": "."
+  "functions": {
+    "api/gpt.js": {
+      "maxDuration": 30
+    },
+    "api/tts.js": {
+      "maxDuration": 30
+    },
+    "api/whisper.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/gpt",
+      "destination": "/api/gpt.js"
+    },
+    {
+      "source": "/api/tts",
+      "destination": "/api/tts.js"
+    },
+    {
+      "source": "/api/whisper",
+      "destination": "/api/whisper.js"
+    }
+  ]
 }
