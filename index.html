@@ -286,64 +286,6 @@
 
         .hidden { display: none !important; }
 
-        /* ── Visualizador de audio ── */
-        .visualizer {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 4px;
-            height: 56px;
-            width: 220px;
-        }
-
-        .visualizer .vbar {
-            width: 5px;
-            border-radius: 3px;
-            transition: height 0.07s ease, opacity 0.3s ease;
-            height: 4px;
-            opacity: 0.2;
-        }
-
-        .visualizer.vigil .vbar  { background: var(--accent-orange); }
-        .visualizer.user  .vbar  { background: var(--status-green);  }
-
-        .visualizer.active .vbar { opacity: 1; }
-
-        .viz-label {
-            font-size: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 4px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .viz-label.visible { opacity: 1; }
-
-        .viz-vigil-label { color: var(--accent-orange); }
-        .viz-user-label  { color: var(--status-green);  }
-
-        .visualizers-wrap {
-            display: flex;
-            gap: 24px;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-        .viz-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .viz-sep {
-            width: 1px;
-            height: 56px;
-            background: #222;
-            align-self: flex-end;
-        }
-
         @media (max-width: 600px) {
             .mic-button { width: 120px; height: 120px; font-size: 56px; }
         }
@@ -376,19 +318,6 @@
         <div class="dialogue-area" id="dialogueArea"></div>
 
         <div class="control-area">
-            <!-- Visualizadores de audio -->
-            <div class="visualizers-wrap">
-                <div class="viz-col">
-                    <div class="viz-label viz-vigil-label" id="vizLabelVigil">Vigil</div>
-                    <div class="visualizer vigil" id="vizVigil"></div>
-                </div>
-                <div class="viz-sep"></div>
-                <div class="viz-col">
-                    <div class="viz-label viz-user-label" id="vizLabelUser">Tú</div>
-                    <div class="visualizer user" id="vizUser"></div>
-                </div>
-            </div>
-
             <button class="mic-button available" id="micButton">🎤</button>
             <div class="status" id="statusText">Presiona para hablar</div>
         </div>
@@ -425,66 +354,6 @@
         };
 
         // =====================================================
-        // VISUALIZADOR DE AUDIO
-        // =====================================================
-        const VIZ_BARS = 18;
-
-        function initViz(id) {
-            const el = document.getElementById(id);
-            el.innerHTML = '';
-            for (let i = 0; i < VIZ_BARS; i++) {
-                const b = document.createElement('div');
-                b.className = 'vbar';
-                el.appendChild(b);
-            }
-        }
-
-        // Actualiza las barras con un valor RMS (0–1) o onda senoidal si rms === null
-        let _vizT = 0;
-        function updateViz(id, rms) {
-            const el   = document.getElementById(id);
-            const bars = el.querySelectorAll('.vbar');
-            _vizT += 0.07;
-            bars.forEach((b, i) => {
-                const phase = (i / VIZ_BARS) * Math.PI * 2;
-                const sine  = Math.sin(_vizT * 1.4 + phase) * 0.5 + 0.5; // 0–1
-                const amp   = rms !== null ? Math.min(rms * 3, 1) : 0.3;
-                const h     = 4 + amp * sine * 52;
-                b.style.height = h + 'px';
-            });
-        }
-
-        function setVizActive(who, active) {
-            const vizId   = who === 'vigil' ? 'vizVigil'      : 'vizUser';
-            const labelId = who === 'vigil' ? 'vizLabelVigil' : 'vizLabelUser';
-            const el      = document.getElementById(vizId);
-            const label   = document.getElementById(labelId);
-            if (active) {
-                el.classList.add('active');
-                label.classList.add('visible');
-            } else {
-                el.classList.remove('active');
-                label.classList.remove('visible');
-                el.querySelectorAll('.vbar').forEach(b => b.style.height = '4px');
-            }
-        }
-
-        // Loop de animación global
-        let _vigilRms = null;  // null = sin actividad, número = RMS real
-        let _userRms  = null;
-        let _vizRunning = false;
-
-        function startVizLoop() {
-            if (_vizRunning) return;
-            _vizRunning = true;
-            (function loop() {
-                if (_vigilRms !== null) updateViz('vizVigil', _vigilRms);
-                if (_userRms  !== null) updateViz('vizUser',  _userRms);
-                requestAnimationFrame(loop);
-            })();
-        }
-
-        // =====================================================
         // ESTADO DE SESIÓN
         // =====================================================
         const state = {
@@ -505,10 +374,12 @@
             lastActivityTime: null,
             lastTurnoTime: null,
             metrics: {},
-            // Registro de cuántas veces se ha replanteado cada pregunta
             rephraseCount: {},
-            // Índice de la última pregunta hecha en cada fase (para control de turno)
-            lastQuestionIndex: {}
+            lastQuestionIndex: {},
+            // Historial completo para GPT — mantiene memoria de la sesión
+            conversationHistory: [],
+            // Contexto de sesiones previas recuperado del Sheet
+            sessionContext: null
         };
 
         // =====================================================
@@ -793,6 +664,13 @@
                 state.userName  = userData.name;
                 state.userEmail = userData.email;
 
+                // Recuperar historial de sesiones previas del Sheet
+                try {
+                    const r = await fetch(SHEETS_READ + '?token=flavell-mira-token-2024&userId=' + state.userId);
+                    const d = await r.json();
+                    if (d.success) state.sessionContext = d;
+                } catch(e) { console.warn('Sin historial previo'); }
+
                 const recovered = checkSessionRecovery(state.userId);
                 if (recovered && recovered.turno > 1) {
                     showRecoveryOption(recovered);
@@ -862,22 +740,40 @@
         // =====================================================
         // FLUJO DE ENTREVISTA
         // =====================================================
+        // ── LLAMADA AL MODELO (conversacional con historial) ──
+        const SHEETS_READ = 'https://script.google.com/macros/s/AKfycbxGsmj3jru0QJjxr6BUEodWMv_TtQce4ovG1mlT3noQOiaMCqmWPyUvTWS8AxrCYtS4/exec';
+
+        async function callGPT(userText) {
+            // Agregar mensaje del usuario al historial (excepto el arranque)
+            if (userText) {
+                state.conversationHistory.push({ role: 'user', content: userText });
+            }
+            try {
+                const res = await fetch(CONFIG.API.GPT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        history: state.conversationHistory,
+                        sessionContext: state.sessionContext
+                    })
+                });
+                if (!res.ok) throw new Error('GPT ' + res.status);
+                const data = await res.json();
+                // Agregar respuesta del modelo al historial
+                state.conversationHistory.push({ role: 'assistant', content: data.text });
+                return data;
+            } catch(err) {
+                console.error('GPT error:', err);
+                return null;
+            }
+        }
+
         async function startInterview() {
             state.turno = 1;
             state.fase  = 1;
             state.lastTurnoTime = Date.now();
             updateStatus('Iniciando...', 'active');
             updateProgress();
-
-            // Pre-calentar permiso del mic antes del primer TTS
-            // para que el barge-in no encuentre el diálogo de permisos a mitad del audio
-            try {
-                const warmStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                warmStream.getTracks().forEach(t => t.stop());
-            } catch (e) {
-                console.warn('Permiso de mic no concedido:', e.message);
-            }
-
             showMiraText(VIGIL.apertura);
             setMicState('speaking');
             await speakText(VIGIL.apertura);
@@ -969,10 +865,6 @@
         // =====================================================
         // GRABACIÓN Y PROCESAMIENTO DE AUDIO
         // =====================================================
-        let _userAnalyser = null;
-        let _userAnalyserBuf = null;
-        let _userRmsInterval = null;
-
         async function startRecording() {
             if (state.sessionClosed || state.isSpeaking) return;
             try {
@@ -981,47 +873,14 @@
                 state.mediaRecorder = new MediaRecorder(stream);
                 state.audioChunks = [];
                 state.mediaRecorder.ondataavailable = e => state.audioChunks.push(e.data);
-                state.mediaRecorder.onstop = () => {
-                    stopUserViz();
-                    processAudio();
-                };
+                state.mediaRecorder.onstop = processAudio;
                 state.mediaRecorder.start();
                 state.isRecording = true;
                 setMicState('recording');
                 updateStatus('Hablando...', 'active');
-
-                // Visualizador verde con RMS real del mic
-                const userCtx = new AudioContext();
-                _userAnalyser = userCtx.createAnalyser();
-                _userAnalyser.fftSize = 512;
-                _userAnalyserBuf = new Float32Array(512);
-                userCtx.createMediaStreamSource(stream).connect(_userAnalyser);
-
-                setVizActive('user', true);
-                _userRmsInterval = setInterval(() => {
-                    _userAnalyser.getFloatTimeDomainData(_userAnalyserBuf);
-                    const rms = Math.sqrt(_userAnalyserBuf.reduce((s, v) => s + v * v, 0) / _userAnalyserBuf.length);
-                    _userRms = rms;
-                }, 50);
-
-                // Guardamos el ctx para cerrarlo al parar
-                state._userAudioCtx = userCtx;
-
             } catch (err) {
                 console.error('Mic error:', err);
                 updateStatus('Error micrófono', 'error');
-            }
-        }
-
-        function stopUserViz() {
-            clearInterval(_userRmsInterval);
-            _userRmsInterval = null;
-            _userRms = null;
-            _userAnalyser = null;
-            setVizActive('user', false);
-            if (state._userAudioCtx) {
-                state._userAudioCtx.close();
-                state._userAudioCtx = null;
             }
         }
 
@@ -1106,7 +965,7 @@
                         if (elaboracion === 'breve') {
                             await askRephrasedQuestion();
                         } else if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
-                            await closeSession();
+                            const cMsg = (await callGPT(null))?.text || "Fue un gusto. Hasta la próxima."; await closeSessionWithText(cMsg);
                         } else {
                             await askNextQuestion();
                         }
@@ -1135,24 +994,36 @@
             setMicState('processing');
 
             try {
-                const phaseQuestions = VIGIL.preguntas[state.fase];
-                // Guardar el índice de la última pregunta para no repetir antes de tiempo
-                const currentIdx = state.lastQuestionIndex[state.fase] !== undefined
-                    ? (state.lastQuestionIndex[state.fase] + 1) % phaseQuestions.length
-                    : 0;
-                state.lastQuestionIndex[state.fase] = currentIdx;
-
-                const question = phaseQuestions[currentIdx];
+                // El modelo decide la siguiente pregunta según el historial
+                const response = await callGPT(null);
                 hideTyping();
+
+                if (!response) {
+                    updateStatus('Error de conexión', '');
+                    setMicState('available');
+                    return;
+                }
+
+                // Cierre detectado por el modelo
+                if (response.meta && response.meta.esCierre) {
+                    await closeSessionWithText(response.text);
+                    return;
+                }
+
+                // Solo audio — sin texto visible
                 clearDialogue();
-                showMiraText(question);
                 setMicState('speaking');
-                await speakText(question);
+                await speakText(response.text);
 
                 logToSheet({
                     turno: state.turno, fase: state.fase,
                     speaker: 'vigil', tipo: 'pregunta',
-                    texto: question, latencia: 0, elaboracion: 'N/A'
+                    texto: response.text, latencia: 0, elaboracion: 'N/A',
+                    faseZimmerman: response.meta?.faseActual || '',
+                    tecnicaUsada:  response.meta?.tecnicaUsada || '',
+                    tipoProducto:  response.meta?.tipoProducto || '',
+                    proyectoId:    response.meta?.proyectoId || '',
+                    usoIA:         response.meta?.usoIA || ''
                 });
 
                 setMicState('available');
@@ -1161,64 +1032,26 @@
 
             } catch (err) {
                 console.error('Question error:', err);
-                updateStatus('Error', 'error');
+                updateStatus('Error', '');
                 setMicState('available');
             }
         }
 
-        // =====================================================
-        // REPLANTEAMIENTO — Cuando la respuesta es breve/vaga
-        // =====================================================
+        // Replanteamiento: el modelo ya maneja esto internamente,
+        // pero si la respuesta es breve la pasamos igual al historial
+        // y el modelo decide si insistir o avanzar
         async function askRephrasedQuestion() {
-            updateStatus('Vigil insiste...', 'active');
-            showTyping();
-            setMicState('processing');
-
-            // Llevar conteo de replanteamientos para no ciclar
-            const key = `${state.fase}-${state.turno}`;
-            state.rephraseCount[key] = (state.rephraseCount[key] || 0) + 1;
-
-            // Si ya se replanteó 2 veces, pasar a la siguiente pregunta
-            if (state.rephraseCount[key] > 2) {
-                hideTyping();
-                await askNextQuestion();
-                return;
-            }
-
-            const rephrases = VIGIL.replanteamientos[state.fase];
-            const idx = (state.rephraseCount[key] - 1) % rephrases.length;
-            const rephrase = rephrases[idx];
-
-            hideTyping();
-            clearDialogue();
-            showMiraText(rephrase);
-            setMicState('speaking');
-            await speakText(rephrase);
-
-            logToSheet({
-                turno: state.turno, fase: state.fase,
-                speaker: 'vigil', tipo: 'replanteamiento',
-                texto: rephrase, latencia: 0, elaboracion: 'N/A'
-            });
-
-            setMicState('available');
-            updateStatus('Presiona para hablar', 'active');
-            saveSessionState();
+            await askNextQuestion();
         }
 
         // =====================================================
         // CIERRE DE SESIÓN
         // =====================================================
-        async function closeSession() {
+        async function closeSessionWithText(closeMsg) {
             state.sessionClosed = true;
             setMicState('closed');
 
-            let closeMsg = VIGIL.cierres.exitoso;
-            if (state.indicators.length === 0) closeMsg = VIGIL.cierres.frustrado;
-            else if (state.indicators.length === 1) closeMsg = VIGIL.cierres.incompleto;
-
             clearDialogue();
-            showMiraText(closeMsg);
             setMicState('speaking');
             updateStatus('Sesión completada ✓', 'success');
             await speakText(closeMsg);
@@ -1257,8 +1090,6 @@
         // =====================================================
         async function speakText(text) {
             state.isSpeaking = true;
-            setVizActive('vigil', true);
-
             try {
                 const res  = await fetch(CONFIG.API.TTS, {
                     method: 'POST',
@@ -1269,73 +1100,16 @@
                 if (!res.ok) throw new Error(data.error);
 
                 const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
-
-                // ── BARGE-IN + visualizador naranja real ──
-                let bargeStream   = null;
-                let bargeCtx      = null;
-                let bargeAnalyser = null;
-                let bargeMonitor  = null;
-                let voiceTimer    = null;
-                const THRESHOLD   = 0.04;
-                const CONFIRM_MS  = 200;
-                const bargeBuf    = new Float32Array(512);
-
-                try {
-                    bargeStream   = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    bargeCtx      = new AudioContext();
-                    bargeAnalyser = bargeCtx.createAnalyser();
-                    bargeAnalyser.fftSize = 512;
-                    bargeCtx.createMediaStreamSource(bargeStream).connect(bargeAnalyser);
-
-                    bargeMonitor = setInterval(() => {
-                        bargeAnalyser.getFloatTimeDomainData(bargeBuf);
-                        const rms = Math.sqrt(bargeBuf.reduce((s, v) => s + v * v, 0) / bargeBuf.length);
-                        _vigilRms = 0.4 + Math.random() * 0.3;
-
-                        if (rms > THRESHOLD) {
-                            if (!voiceTimer) {
-                                voiceTimer = setTimeout(() => {
-                                    // Limpiar todo y resolver el Promise correctamente
-                                    audio.pause();
-                                    cleanup();       // cancela el TTS_TIMEOUT y limpia recursos
-                                    resolve();       // resuelve el Promise para no dejar colgado el await
-                                    startRecording();
-                                }, CONFIRM_MS);
-                            }
-                        } else {
-                            clearTimeout(voiceTimer);
-                            voiceTimer = null;
-                        }
-                    }, 50);
-                } catch (e) {
-                    // Si no hay mic disponible, animación senoidal de todos modos
-                    _vigilRms = 0.5;
-                }
-                // ── FIN BARGE-IN ──
-
                 return new Promise(resolve => {
-                    const timeout = setTimeout(() => { cleanup(); resolve(); }, CONFIG.TTS_TIMEOUT);
-
-                    function cleanup() {
-                        clearInterval(bargeMonitor);
-                        clearTimeout(timeout);
-                        clearTimeout(voiceTimer);
-                        if (bargeCtx) bargeCtx.close();
-                        if (bargeStream) bargeStream.getTracks().forEach(t => t.stop());
-                        state.isSpeaking = false;
-                        setVizActive('vigil', false);
-                        _vigilRms = null;
-                    }
-
-                    audio.onended = () => { cleanup(); resolve(); };
-                    audio.onerror = () => { cleanup(); resolve(); };
-                    audio.play().catch(() => { cleanup(); resolve(); });
+                    const timeout = setTimeout(() => { state.isSpeaking = false; resolve(); }, CONFIG.TTS_TIMEOUT);
+                    const done = () => { clearTimeout(timeout); state.isSpeaking = false; resolve(); };
+                    audio.onended = done;
+                    audio.onerror = done;
+                    audio.play().catch(done);
                 });
             } catch (err) {
                 console.error('TTS error:', err);
                 state.isSpeaking = false;
-                setVizActive('vigil', false);
-                _vigilRms = null;
             }
         }
 
@@ -1466,12 +1240,9 @@
         // UI HELPERS
         // =====================================================
         function showMiraText(text) {
-            const area = document.getElementById('dialogueArea');
-            area.innerHTML = '';
-            const div = document.createElement('div');
-            div.className = 'mira-text';
-            div.textContent = text;
-            area.appendChild(div);
+            // Vigil no muestra texto — solo la animación del visualizador habla
+            // El texto se guarda en el historial y en el Sheet, pero no es visible
+            clearDialogue();
         }
 
         function showStudentText(text) {
@@ -1523,15 +1294,9 @@
         // =====================================================
         // INIT
         // =====================================================
-        window.addEventListener('DOMContentLoaded', () => {
-            initGoogleAuth();
-            initViz('vizVigil');
-            initViz('vizUser');
-            startVizLoop();
-        });
+        window.addEventListener('DOMContentLoaded', initGoogleAuth);
         window.addEventListener('load', initGoogleAuth);
     </script>
 
 </body>
 </html>
-
