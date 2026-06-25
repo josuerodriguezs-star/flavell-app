@@ -340,6 +340,7 @@
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx6P0s2eAtYdFGBuGbDJZyzr4GTHq2k-6a-FkdbRgzBsffjQ1hx4pYfCmLNh7a7OBhC/exec?token=flavell-mira-token-2024',
+            SHEETS_READ: 'https://script.google.com/macros/s/AKfycbxGsmj3jru0QJjxr6BUEodWMv_TtQce4ovG1mlT3noQOiaMCqmWPyUvTWS8AxrCYtS4/exec',
             MAX_TURNS: 12,
             MIN_RESPONSES_TO_CLOSE: 4,
             MIN_INDICATORS_TO_CLOSE: 2,
@@ -653,7 +654,7 @@
             }
         }
 
-        function handleGoogleLogin(response) {
+        async function handleGoogleLogin(response) {
             try {
                 const base64 = response.credential.split('.')[1]
                     .replace(/-/g, '+').replace(/_/g, '/');
@@ -666,7 +667,7 @@
 
                 // Recuperar historial de sesiones previas del Sheet
                 try {
-                    const r = await fetch(SHEETS_READ + '?token=flavell-mira-token-2024&userId=' + state.userId);
+                    const r = await fetch(CONFIG.SHEETS_READ + '?token=flavell-mira-token-2024&userId=' + state.userId);
                     const d = await r.json();
                     if (d.success) state.sessionContext = d;
                 } catch(e) { console.warn('Sin historial previo'); }
@@ -741,8 +742,6 @@
         // FLUJO DE ENTREVISTA
         // =====================================================
         // ── LLAMADA AL MODELO (conversacional con historial) ──
-        const SHEETS_READ = 'https://script.google.com/macros/s/AKfycbxGsmj3jru0QJjxr6BUEodWMv_TtQce4ovG1mlT3noQOiaMCqmWPyUvTWS8AxrCYtS4/exec';
-
         async function callGPT(userText) {
             // Agregar mensaje del usuario al historial (excepto el arranque)
             if (userText) {
