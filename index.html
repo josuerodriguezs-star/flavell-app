@@ -340,7 +340,7 @@
         const CONFIG = {
             GOOGLE_CLIENT_ID: '1024048650335-et8uu1tgifepgbbfdh6hr7md1bb1hf7q.apps.googleusercontent.com',
             SHEETS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbx6P0s2eAtYdFGBuGbDJZyzr4GTHq2k-6a-FkdbRgzBsffjQ1hx4pYfCmLNh7a7OBhC/exec?token=flavell-mira-token-2024',
-            SHEETS_READ: 'https://script.google.com/macros/s/AKfycbxGsmj3jru0QJjxr6BUEodWMv_TtQce4ovG1mlT3noQOiaMCqmWPyUvTWS8AxrCYtS4/exec',
+            SHEETS_READ:    'https://script.google.com/macros/s/AKfycbyyb0tOw5qrvtEEPvwk1u_bg2SdmhGYSbrxh0aR-nXrb7VoLT9jvFOkrtecAE6xU6k/exec',
             MAX_TURNS: 12,
             MIN_RESPONSES_TO_CLOSE: 4,
             MIN_INDICATORS_TO_CLOSE: 2,
@@ -375,12 +375,10 @@
             lastActivityTime: null,
             lastTurnoTime: null,
             metrics: {},
+            // Registro de cuántas veces se ha replanteado cada pregunta
             rephraseCount: {},
-            lastQuestionIndex: {},
-            // Historial completo para GPT — mantiene memoria de la sesión
-            conversationHistory: [],
-            // Contexto de sesiones previas recuperado del Sheet
-            sessionContext: null
+            // Índice de la última pregunta hecha en cada fase (para control de turno)
+            lastQuestionIndex: {}
         };
 
         // =====================================================
@@ -670,7 +668,7 @@
                     const r = await fetch(CONFIG.SHEETS_READ + '?token=flavell-mira-token-2024&userId=' + state.userId);
                     const d = await r.json();
                     if (d.success) state.sessionContext = d;
-                } catch(e) { console.warn('Sin historial previo'); }
+                } catch(e) { console.warn('Sin historial previo:', e); }
 
                 const recovered = checkSessionRecovery(state.userId);
                 if (recovered && recovered.turno > 1) {
@@ -741,48 +739,31 @@
         // =====================================================
         // FLUJO DE ENTREVISTA
         // =====================================================
-        // ── LLAMADA AL MODELO (conversacional con historial) ──
-        async function callGPT(userText) {
-            // Agregar mensaje del usuario al historial (excepto el arranque)
-            if (userText) {
-                state.conversationHistory.push({ role: 'user', content: userText });
-            }
-            try {
-                const res = await fetch(CONFIG.API.GPT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        history: state.conversationHistory,
-                        sessionContext: state.sessionContext
-                    })
-                });
-                if (!res.ok) throw new Error('GPT ' + res.status);
-                const data = await res.json();
-                // Agregar respuesta del modelo al historial
-                state.conversationHistory.push({ role: 'assistant', content: data.text });
-                return data;
-            } catch(err) {
-                console.error('GPT error:', err);
-                return null;
-            }
-        }
-
         async function startInterview() {
             state.turno = 1;
             state.fase  = 1;
             state.lastTurnoTime = Date.now();
-            updateStatus('Iniciando...', 'active');
+            updateStatus('Vigil conecta...', 'active');
             updateProgress();
-            showMiraText(VIGIL.apertura);
+
+            // Pre-calentar permiso del mic
+            try {
+                const warmStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                warmStream.getTracks().forEach(t => t.stop());
+            } catch(e) { console.warn('Permiso mic:', e.message); }
+
+            const opening = await callGPT(null);
+            if (!opening) { updateStatus('Error de conexión', 'warning'); return; }
+
             setMicState('speaking');
-            await speakText(VIGIL.apertura);
+            await speakText(opening.text);
             setMicState('available');
             updateStatus('Presiona para hablar', 'active');
 
             logToSheet({
                 turno: state.turno, fase: state.fase,
                 speaker: 'vigil', tipo: 'apertura',
-                texto: VIGIL.apertura, latencia: 0, elaboracion: 'N/A'
+                texto: opening.text, latencia: 0, elaboracion: 'N/A'
             });
             saveSessionState();
         }
@@ -964,7 +945,7 @@
                         if (elaboracion === 'breve') {
                             await askRephrasedQuestion();
                         } else if (shouldClose() || state.turno > CONFIG.MAX_TURNS) {
-                            const cMsg = (await callGPT(null))?.text || "Fue un gusto. Hasta la próxima."; await closeSessionWithText(cMsg);
+                            await closeSession();
                         } else {
                             await askNextQuestion();
                         }
@@ -993,36 +974,24 @@
             setMicState('processing');
 
             try {
-                // El modelo decide la siguiente pregunta según el historial
-                const response = await callGPT(null);
+                const phaseQuestions = VIGIL.preguntas[state.fase];
+                // Guardar el índice de la última pregunta para no repetir antes de tiempo
+                const currentIdx = state.lastQuestionIndex[state.fase] !== undefined
+                    ? (state.lastQuestionIndex[state.fase] + 1) % phaseQuestions.length
+                    : 0;
+                state.lastQuestionIndex[state.fase] = currentIdx;
+
+                const question = phaseQuestions[currentIdx];
                 hideTyping();
-
-                if (!response) {
-                    updateStatus('Error de conexión', '');
-                    setMicState('available');
-                    return;
-                }
-
-                // Cierre detectado por el modelo
-                if (response.meta && response.meta.esCierre) {
-                    await closeSessionWithText(response.text);
-                    return;
-                }
-
-                // Solo audio — sin texto visible
                 clearDialogue();
+                showMiraText(question);
                 setMicState('speaking');
-                await speakText(response.text);
+                await speakText(question);
 
                 logToSheet({
                     turno: state.turno, fase: state.fase,
                     speaker: 'vigil', tipo: 'pregunta',
-                    texto: response.text, latencia: 0, elaboracion: 'N/A',
-                    faseZimmerman: response.meta?.faseActual || '',
-                    tecnicaUsada:  response.meta?.tecnicaUsada || '',
-                    tipoProducto:  response.meta?.tipoProducto || '',
-                    proyectoId:    response.meta?.proyectoId || '',
-                    usoIA:         response.meta?.usoIA || ''
+                    texto: question, latencia: 0, elaboracion: 'N/A'
                 });
 
                 setMicState('available');
@@ -1031,26 +1000,64 @@
 
             } catch (err) {
                 console.error('Question error:', err);
-                updateStatus('Error', '');
+                updateStatus('Error', 'error');
                 setMicState('available');
             }
         }
 
-        // Replanteamiento: el modelo ya maneja esto internamente,
-        // pero si la respuesta es breve la pasamos igual al historial
-        // y el modelo decide si insistir o avanzar
+        // =====================================================
+        // REPLANTEAMIENTO — Cuando la respuesta es breve/vaga
+        // =====================================================
         async function askRephrasedQuestion() {
-            await askNextQuestion();
+            updateStatus('Vigil insiste...', 'active');
+            showTyping();
+            setMicState('processing');
+
+            // Llevar conteo de replanteamientos para no ciclar
+            const key = `${state.fase}-${state.turno}`;
+            state.rephraseCount[key] = (state.rephraseCount[key] || 0) + 1;
+
+            // Si ya se replanteó 2 veces, pasar a la siguiente pregunta
+            if (state.rephraseCount[key] > 2) {
+                hideTyping();
+                await askNextQuestion();
+                return;
+            }
+
+            const rephrases = VIGIL.replanteamientos[state.fase];
+            const idx = (state.rephraseCount[key] - 1) % rephrases.length;
+            const rephrase = rephrases[idx];
+
+            hideTyping();
+            clearDialogue();
+            showMiraText(rephrase);
+            setMicState('speaking');
+            await speakText(rephrase);
+
+            logToSheet({
+                turno: state.turno, fase: state.fase,
+                speaker: 'vigil', tipo: 'replanteamiento',
+                texto: rephrase, latencia: 0, elaboracion: 'N/A'
+            });
+
+            setMicState('available');
+            updateStatus('Presiona para hablar', 'active');
+            saveSessionState();
         }
 
         // =====================================================
         // CIERRE DE SESIÓN
         // =====================================================
-        async function closeSessionWithText(closeMsg) {
+        async function closeSession() {
             state.sessionClosed = true;
             setMicState('closed');
 
+            let closeMsg = VIGIL.cierres.exitoso;
+            if (state.indicators.length === 0) closeMsg = VIGIL.cierres.frustrado;
+            else if (state.indicators.length === 1) closeMsg = VIGIL.cierres.incompleto;
+
             clearDialogue();
+            showMiraText(closeMsg);
             setMicState('speaking');
             updateStatus('Sesión completada ✓', 'success');
             await speakText(closeMsg);
@@ -1239,9 +1246,12 @@
         // UI HELPERS
         // =====================================================
         function showMiraText(text) {
-            // Vigil no muestra texto — solo la animación del visualizador habla
-            // El texto se guarda en el historial y en el Sheet, pero no es visible
-            clearDialogue();
+            const area = document.getElementById('dialogueArea');
+            area.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'mira-text';
+            div.textContent = text;
+            area.appendChild(div);
         }
 
         function showStudentText(text) {
