@@ -223,8 +223,9 @@ export default async function handler(req, res) {
         // Estructura: { history: [{role, content}], sessionContext: {...} }
         const { history, sessionContext } = req.body;
 
-        if (!history || !Array.isArray(history) || history.length === 0) {
-            return res.status(400).json({ error: 'history array requerido y no puede estar vacío' });
+        // history puede estar vacío en la primera llamada (apertura)
+        if (!history || !Array.isArray(history)) {
+            return res.status(400).json({ error: 'history debe ser un array' });
         }
 
         // Si hay contexto de sesiones anteriores (recuperado del Sheet por doGet),
